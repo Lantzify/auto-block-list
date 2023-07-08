@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+		<StaticWebAssetBasePath>App_Plugins/DataBlockConverter</StaticWebAssetBasePath>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\overview.controller.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\backoffice\dataBlockConverter\overview.controller.js" />
+  </ItemGroup>
+
+		<ItemGroup>
+				<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="11.2.2" />
+		</ItemGroup>
+
+</Project>
