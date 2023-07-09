@@ -1,0 +1,100 @@
+﻿﻿<div ng-controller="dataBlockConverter.overview.controller as vm">
+    <umb-editor-view>
+        <umb-editor-header name="vm.page.title"
+                           description="vm.page.description"
+                           name-locked="true"
+                           hide-icon="true"
+                           hide-alias="true"
+                           description-locked="true">
+        </umb-editor-header>
+
+        <umb-editor-container>
+
+            <umb-load-indicator ng-if="vm.loading"></umb-load-indicator>
+
+            <umb-box ng-if="!vm.loading">
+                <umb-box-header title="Content" description="If you want to convert all nested content in this document type and add them to the document type"></umb-box-header>
+
+                <umb-box-content>
+                    <div>
+                        <div class="umb-table">
+                            <div class="umb-table-head">
+                                <div class="umb-table-row">
+                                    <div class="umb-table-cell"></div>
+                                    <div class="umb-table-cell umb-table__name not-fixed"><localize key="general_name">Name</localize></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                    <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                </div>
+                            </div>
+                            <div class="umb-table-body">
+                                <div class="umb-table-row" ng-repeat="page in vm.content">
+                                    <div class="umb-table-cell"><umb-icon icon="{{page.icon}}" class="umb-table-body__icon"></umb-icon></div>
+                                    <div class="umb-table-cell umb-table__name"><span>{{::page.name}}</span></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><a href="#/settings/dataTypes/edit/{{::page.id}}" ng-click="vm.openDocumentType(reference.id, $event)"><localize key="general_open">Open</localize></a></div>      
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </umb-box-content>
+            </umb-box>
+
+            <umb-box ng-if="!vm.loading">
+                <umb-box-header title="Document types" description="If you want to convert all nested content in this document type and add them to the document type"></umb-box-header>
+
+                <umb-box-content>
+                    <div>
+                        <div class="umb-table">
+                            <div class="umb-table-head">
+                                <div class="umb-table-row">
+                                    <div class="umb-table-cell"></div>
+                                    <div class="umb-table-cell umb-table__name not-fixed"><localize key="general_name">Name</localize></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                    <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                </div>
+                            </div>
+                            <div class="umb-table-body">
+                                <div class="umb-table-row" ng-repeat="contentTypes in vm.contentTypes">
+                                    <div class="umb-table-cell"><umb-icon icon="{{contentTypes.icon}}" class="umb-table-body__icon"></umb-icon></div>
+                                    <div class="umb-table-cell umb-table__name"><span>{{::contentTypes.name}}</span></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><a href="#/settings/dataTypes/edit/{{::dataType.id}}" ng-click="vm.openDocumentType(reference.id, $event)"><localize key="general_open">Open</localize></a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </umb-box-content>
+            </umb-box>
+
+            <umb-box ng-if="!vm.loading">
+                <umb-box-header title="Data types" description="If you just want to convert the data type but not add it to the document type"></umb-box-header>
+                <umb-box-content>
+                    <div>
+                        <div class="umb-table">
+                            <div class="umb-table-head">
+                                <div class="umb-table-row">
+                                    <div class="umb-table-cell"></div>
+                                    <div class="umb-table-cell umb-table__name not-fixed"><localize key="general_name">Name</localize></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                    <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                </div>
+                            </div>
+                            <div class="umb-table-body">
+                                <div class="umb-table-row" ng-repeat="dataType in vm.dataTypes">
+                                    <div class="umb-table-cell"><umb-icon icon="{{dataType.icon}}" class="umb-table-body__icon"></umb-icon></div>
+                                    <div class="umb-table-cell umb-table__name"><span>{{::dataType.name}}</span></div>
+                                    <div class="umb-table-cell umb-table-cell--nano"><a href="#/settings/dataTypes/edit/{{::dataType.id}}" ng-click="vm.openDocumentType(reference.id, $event)"><localize key="general_open">Open</localize></a></div>
+                                    <div class="umb-table-cell">
+                                        <a href="#/settings/dataTypes/edit/{{dataType.matchingBLId}}" ng-if="dataType.matchingBLId">
+                                            View matching block listtt
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </umb-box-content>
+            </umb-box>
+
+        </umb-editor-container>
+
+    </umb-editor-view>
+</div>

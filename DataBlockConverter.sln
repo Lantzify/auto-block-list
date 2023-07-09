@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBlockConverter", "DataBlockConverter\DataBlockConverter.csproj", "{17950E8A-6D7D-4CCE-A1FA-4F5975127072}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataBlockConverter.Web", "DataBlockConverter.Web\DataBlockConverter.Web.csproj", "{17950E8A-6D7D-4CCE-A1FA-4F5975127072}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBlockConverter.Core", "DataBlockConverter.Core\DataBlockConverter.Core.csproj", "{D1AD61EC-3966-4764-B2A2-8408E36F45D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataBlockConverter", "DataBlockConverter\DataBlockConverter.csproj", "{D1AD61EC-3966-4764-B2A2-8408E36F45D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

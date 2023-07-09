@@ -1,10 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using Umbraco.Extensions;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using Umbraco.Cms.Core.Composing;
+﻿using Umbraco.Cms.Core.Composing;
+using DataBlockConverter.Core.Dtos;
 using DataBlockConverter.Core.Services;
 using DataBlockConverter.Core.Backoffice;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -19,6 +14,9 @@ namespace DataBlockConverter.Core.Composers
             builder.ManifestFilters().Append<DataBlockConverterManifestFilter>();
 
             builder.Services.AddSingleton<IDataBlockConverterService, DataBlockConverterService>();
+
+            builder.Services.AddOptions<DataBlockConverterSettings>()
+                .Bind(builder.Config.GetSection(DataBlockConverterSettings.DataBlockConverter));
         }
     }
 }

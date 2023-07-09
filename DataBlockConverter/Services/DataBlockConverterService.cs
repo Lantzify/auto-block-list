@@ -5,9 +5,12 @@ using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using System.Collections.Generic;
+using DataBlockConverter.Core.Dtos;
+using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
+using Umbraco.Cms.Core.Services.Implement;
 using System.ComponentModel.DataAnnotations;
 using DataType = Umbraco.Cms.Core.Models.DataType;
 using static Umbraco.Cms.Core.PropertyEditors.BlockListConfiguration;
@@ -16,19 +19,26 @@ namespace DataBlockConverter.Core.Services
 {
     public class DataBlockConverterService : IDataBlockConverterService
     {
+        private readonly IDataTypeService _dataTypeService;
         private readonly IContentTypeService _contentTypeService;
+        
         private readonly IDataValueEditorFactory _dataValueEditorFactory;
         private readonly PropertyEditorCollection _propertyEditorCollection;
+        private readonly IOptions<DataBlockConverterSettings> _dataBlockConverterSettings;
         private readonly IConfigurationEditorJsonSerializer _configurationEditorJsonSerializer;
 
-        public DataBlockConverterService(IContentTypeService contentTypeService,
+        public DataBlockConverterService(IDataTypeService dataTypeService,
+            IContentTypeService contentTypeService,
             IDataValueEditorFactory dataValueEditorFactory,
             PropertyEditorCollection propertyEditorCollection,
+            IOptions<DataBlockConverterSettings> dataBlockConverterSettings,
             IConfigurationEditorJsonSerializer configurationEditorJsonSerializer)
         {
+            _dataTypeService = dataTypeService;
             _contentTypeService = contentTypeService;
             _dataValueEditorFactory = dataValueEditorFactory;
             _propertyEditorCollection = propertyEditorCollection;
+            _dataBlockConverterSettings = dataBlockConverterSettings;
             _configurationEditorJsonSerializer = configurationEditorJsonSerializer;
         }
 
@@ -40,7 +50,7 @@ namespace DataBlockConverter.Core.Services
             {
                 Editor = _propertyEditorCollection.First(x => x.Alias == PropertyEditors.Aliases.BlockList),
                 CreateDate = DateTime.Now,
-                Name = string.Format("[Block list] - {0}", ncDataType.Name),
+                Name = string.Format(GetNameFormatting(), ncDataType.Name),
                 Configuration = new BlockListConfiguration()
                 {
                     ValidationLimit = new BlockListConfiguration.NumberRange()
@@ -67,6 +77,26 @@ namespace DataBlockConverter.Core.Services
             blConfig.Blocks = blocks.ToArray();
 
             return blDataType;
+        }
+
+        public IEnumerable<CustomDisplayDataType> GetAllNCDataTypes()
+        {
+            var dataTypes = new List<CustomDisplayDataType>();
+            foreach (var dataType in _dataTypeService.GetAll().Where(x => x.EditorAlias == PropertyEditors.Aliases.NestedContent))
+                dataTypes.Add(new CustomDisplayDataType()
+                {
+                    Id = dataType.Id,
+                    Name = dataType.Name,
+                    Icon = dataType.Editor.Icon,
+                    MatchingBLId = _dataTypeService.GetDataType(string.Format(GetNameFormatting(), dataType.Name))?.Id
+                });
+
+            return dataTypes;
+        }
+
+        public string GetNameFormatting()
+        {
+            return _dataBlockConverterSettings.Value.NameFormatting;
         }
     }
 }
