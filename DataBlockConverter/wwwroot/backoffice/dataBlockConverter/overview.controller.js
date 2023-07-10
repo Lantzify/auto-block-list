@@ -29,7 +29,6 @@ angular.module("umbraco").controller("dataBlockConverter.overview.controller", f
         }
     });
 
-
     vm.convertDataType = function (dataType) {
         $http.get("/umbraco/api/ConvertApi/ConverNCDataType?id=" + dataType.id).then(function (response) {
             notificationsService.success(title, "");

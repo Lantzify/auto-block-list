@@ -11,7 +11,9 @@ namespace DataBlockConverter.Core.Services
 {
     public interface IDataBlockConverterService
     {
+        void TransferContent(int id);
         string GetNameFormatting();
+        string GetAliasFormatting();
         IDataType? CreateBLDataType(IDataType ncDataType);
         IEnumerable<CustomDisplayDataType> GetAllNCDataTypes();
     }

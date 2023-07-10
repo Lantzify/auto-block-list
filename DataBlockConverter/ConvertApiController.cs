@@ -139,7 +139,7 @@ namespace DataBlockConverter.Core
                             PropertyEditorAlias = blockList.EditorAlias,
                             ValueStorageType = dataType.DatabaseType,
                             Name = propertyType.Name,
-                            Alias = propertyType.Alias + "BL",
+                            Alias = string.Format(_dataBlockConverterService.GetAliasFormatting(), propertyType.Alias),
                             CreateDate = DateTime.Now,
                             Description = propertyType.Description,
                             Mandatory = propertyType.Mandatory,
@@ -164,6 +164,12 @@ namespace DataBlockConverter.Core
                 _logger.LogError(ex, "Failed to convert to block list.");
                 return ValidationProblem("Failed to convert to block list.");
             }
+        }
+
+        [HttpGet]
+        public void TransferContent(int id)
+        {
+            _dataBlockConverterService.TransferContent(id);
         }
     }
 }
