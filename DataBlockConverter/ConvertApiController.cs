@@ -94,12 +94,10 @@ namespace DataBlockConverter.Core
             return _contentService.GetPagedOfTypes(GetAllNCContentTypes().Select(x => x.Id).ToArray(), 0, 100, out long totalRecords, null, null);
         }
 
-        [HttpGet]
+        [HttpPost]
         public ActionResult ConverNCDataType(int id)
         {
-            var dataType = _dataTypeService.GetDataType(id);
-            if (dataType == null)
-                return null;
+            IDataType dataType = _dataTypeService.GetDataType(id);
 
             try
             {
@@ -115,7 +113,7 @@ namespace DataBlockConverter.Core
             }
         }
 
-        [HttpGet]
+        [HttpPost]
         public ActionResult ConvertNCInContentType(int id)
         {
             var contentType = _contentTypeService.Get(id);
