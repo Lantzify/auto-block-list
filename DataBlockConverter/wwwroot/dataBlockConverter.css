@@ -1,0 +1,8 @@
+.dataBlockConverter .umb-progress-bar__progress {
+    transition: all 1s;
+}
+
+
+.dataBlockConverter .umb-progress-bar umb-progress-bar--s {
+    transition: all 1s;
+}

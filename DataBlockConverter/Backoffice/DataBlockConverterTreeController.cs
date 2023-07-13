@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.BackOffice.Trees;
 using Umbraco.Cms.Web.Common.Attributes;
+using static Umbraco.Cms.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Web.Common.ModelBinders;
 using Umbraco.Cms.Web.Common.Authorization;
@@ -32,7 +33,7 @@ namespace DataBlockConverter.Core.Backoffice
 
             var root = rootResult.Value;
 
-            root.RoutePath = string.Format("{0}/{1}/{2}", Constants.Applications.Settings, "dataBlockConverter", "overview");
+            root.RoutePath = string.Format("{0}/{1}/{2}", Applications.Settings, "dataBlockConverter", "overview");
             root.Icon = "icon-sience";
             root.HasChildren = false;
             root.MenuUrl = null;

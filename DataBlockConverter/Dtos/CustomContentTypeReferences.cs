@@ -13,7 +13,7 @@ namespace DataBlockConverter.Core.Dtos
         public string? Alias { get; set; }
         public string? Icon { get; set; }
         public string? Name { get; set; }
-        public int? NCCount { get; set; }
+        public bool IsElement { get; set; }
        
     }
 }

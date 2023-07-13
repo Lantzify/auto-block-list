@@ -2,8 +2,8 @@ angular.module("umbraco").controller("dataBlockConverter.overview.controller", f
     $q,
     $http,
     editorService,
-    notificationsService,
-    $location) {
+    overlayService,
+    notificationsService) {
 
     var vm = this;
     vm.loading = true;
@@ -40,20 +40,55 @@ angular.module("umbraco").controller("dataBlockConverter.overview.controller", f
     };
 
     $q.all({
-        dataTypes: $http.get("/umbraco/api/ConvertApi/GetAllNCDataTypes"),
-        contentTypes: $http.get("/umbraco/api/ConvertApi/GetAllNCContentTypes"),
+        //dataTypes: $http.get("/umbraco/api/ConvertApi/GetAllNCDataTypes"),
+        //contentTypes: $http.get("/umbraco/api/ConvertApi/GetAllNCContentTypes"),
         content: $http.get("/umbraco/api/ConvertApi/GetAllContentWithNC")
     }).then(function (promises) {
         vm.loading = false;
 
-        vm.dataTypes = promises.dataTypes.data;
-        vm.contentTypes = promises.contentTypes.data;
+        //vm.dataTypes = promises.dataTypes.data;
+        //vm.contentTypes = promises.contentTypes.data;
         vm.content = promises.content.data;
     }, function (err) {
         if (err.data && (err.data.message || err.data.Detail)) {
             notificationsService.error(title, err.data.message ?? err.data.Detail);
         }
     });
+
+    vm.convertContent = function (content) {
+        var options = {
+            view: "/App_Plugins/DataBlockConverter/components/overlays/converting.html",
+            title: "Converting",
+            content: content,
+            disableBackdropClick: true,
+            disableEscKey: true,
+            disableSubmitButton: true,
+            submitButtonLabel: "Confirm",
+            closeButtonLabel: "Close",
+            submit: function (model) {
+                
+            },
+            close: function () {
+                overlayService.close();
+            }
+        };
+
+        overlayService.open(options);
+
+        //$http({
+        //    method: "POST",
+        //    url: "/umbraco/api/ConvertApi/ConverNCDataType",
+        //    data: vm.selectedDataTypes
+        //}).then(function (response) {
+        //    vm.convertDataTypesButtonState = "success";
+        //    notificationsService.success(title, "");
+        //}, function (err) {
+        //    vm.convertDataTypesButtonState = "error";
+        //    if (err.data && (err.data.message || err.data.Detail)) {
+        //        notificationsService.error(title, err.data.message ?? err.data.Detail);
+        //    }
+        //});
+    }
 
     vm.convertDataTypes = function () {
 
@@ -75,7 +110,7 @@ angular.module("umbraco").controller("dataBlockConverter.overview.controller", f
     }
 
     vm.convertContentType = function () {
-
+        vm.convertContentTypeButtonState = "busy";
         $http({
             method: "POST",
             url: "/umbraco/api/ConvertApi/ConvertNCInContentType",
@@ -128,8 +163,6 @@ angular.module("umbraco").controller("dataBlockConverter.overview.controller", f
                 editorService.close();
             }
         };
-
-        console.log(dataTypeId)
 
         editorService.open(dataTypeSettings);
     }

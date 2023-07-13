@@ -7,6 +7,14 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <Content Remove="wwwroot\dataBlockConverter.css" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="wwwroot\dataBlockConverter.css" />
+	</ItemGroup>
+
 
 	<ItemGroup>
 		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="11.2.2" />
