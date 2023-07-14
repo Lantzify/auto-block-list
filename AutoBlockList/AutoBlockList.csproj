@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<StaticWebAssetBasePath>App_Plugins/DataBlockConverter</StaticWebAssetBasePath>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="11.2.2" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<PackageId>AutoBlockList</PackageId>
+		<Version>1.0.0</Version>
+		<Title>Auto block list</Title>
+		<Authors>Lantzify</Authors>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/Lantzify/auto-block-list</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Lantzify/auto-block-list</RepositoryUrl>
+		<Description></Description>
+		<Summary></Summary>
+		<PackageTags>umbraco package umbraco-marketplace</PackageTags>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+		<ContentTargetFolders>content</ContentTargetFolders>
+
+		<PackageOutputPath>../../build/Release</PackageOutputPath>
+
+	</PropertyGroup>
+
+</Project>
