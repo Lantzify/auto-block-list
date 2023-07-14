@@ -1,4 +1,4 @@
-angular.module("umbraco").controller("dataBlockConverter.converting.controller", function (
+angular.module("umbraco").controller("autoBlockList.converting.controller", function (
     $http,
     $scope,
     editorService,

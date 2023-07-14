@@ -13,7 +13,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     vm.selectedDataTypes = []
 
     var appSettings = {
-        DataBlockConverter: {
+        AutoBlockList: {
             NameFormatting: "[Block list] - {0}",
             AliasFormatting: "{0}BL"
         }
