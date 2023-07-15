@@ -1,11 +1,10 @@
 ﻿﻿<div ng-controller="autoBlockList.overview.controller as vm">
     <umb-editor-view>
         <umb-editor-header name="vm.page.title"
-                           description="vm.page.description"
+                           hide-description="true"
                            name-locked="true"
                            hide-icon="true"
-                           hide-alias="true"
-                           description-locked="true">
+                           hide-alias="true">
         </umb-editor-header>
 
         <umb-editor-container>
@@ -15,7 +14,7 @@
             <div class="umb-logviewer" ng-if="!vm.loading">
                 <div class="umb-logviewer__main-content" style="width: calc(100% - 425px);">
                     <umb-box>
-                        <umb-box-header title="Content" description="If you want to convert all nested content in this document type and add them to the document type"></umb-box-header>
+                        <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
                             <div>
@@ -34,13 +33,12 @@
                                             <div class="umb-table-cell">
                                                 <umb-icon icon="{{page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
-                                            <div class="umb-table-cell umb-table__name"><span>{{::page.name}}</span></div>
+                                            <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
                                             <div class="umb-table-cell umb-table-cell--nano"><a ng-click="vm.openContent(page.id)"><localize key="general_open">Open</localize></a></div>
                                             <div class="umb-table-cell">
                                                 <umb-button action="vm.convertContent(page)"
                                                             type="button"
                                                             button-style="primary"
-                                                            state="vm.generateDictionariesButtonState"
                                                             label="Convert">
                                                 </umb-button>
                                             </div>
@@ -51,11 +49,14 @@
                         </umb-box-content>
                     </umb-box>
 
-                    <!--<umb-box>
-                        <umb-box-header title="Document types" description="If you want to convert all nested content in this document type and add them to the document type"></umb-box-header>
+                    <umb-box>
+                        <umb-box-header title="Document types" description="If you want to convert all nested content in this document type and add them to the document type" ng-click="vm.showContentTypesBox = !vm.showContentTypesBox">
+                            <umb-icon icon="{{vm.showContentTypesBox ? 'icon-navigation-up' : 'icon-navigation-down'}}" class="mt2"></umb-icon>
+                        </umb-box-header>
+                        <div ng-if="vm.showContentTypesBox">
 
-                        <umb-box-content>
-                            <div>
+                            <umb-box-content>
+
                                 <div class="umb-table">
                                     <div class="umb-table-head">
                                         <div class="umb-table-row">
@@ -99,14 +100,19 @@
                                         </umb-button>
                                     </div>
                                 </div>
-                            </div>
-                        </umb-box-content>
-                    </umb-box>-->
 
-                    <!--<umb-box>
-                        <umb-box-header title="Data types" description="If you just want to convert the data type but not add it to the document type"></umb-box-header>
-                        <umb-box-content>
-                            <div>
+                            </umb-box-content>
+                        </div>
+                    </umb-box>
+
+                    <umb-box>
+                        <umb-box-header title="Data types" description="If you just want to convert the data type but not add it to the document type" ng-click="vm.showDataTypesBox = !vm.showDataTypesBox">
+                            <umb-icon icon="{{vm.showDataTypesBox ? 'icon-navigation-up' : 'icon-navigation-down'}}" class="mt2"></umb-icon>
+                        </umb-box-header>
+
+                        <div ng-if="vm.showDataTypesBox">
+
+                            <umb-box-content>
                                 <div class="umb-table">
                                     <div class="umb-table-head">
                                         <div class="umb-table-row">
@@ -131,38 +137,48 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedDataTypes.length">
-                                <div>
-                                    <umb-button action="vm.clearSelection(vm.selectedDataTypes)"
-                                                class="mr2"
-                                                type="button"
-                                                button-style="info"
-                                                state="vm.buttonState"
-                                                label="Clear selection">
-                                    </umb-button>
 
-                                    {{vm.selectedDataTypes.length}} of {{vm.dataTypes.length}} selected
-                                </div>
+                                <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedDataTypes.length">
+                                    <div>
+                                        <umb-button action="vm.clearSelection(vm.selectedDataTypes)"
+                                                    class="mr2"
+                                                    type="button"
+                                                    button-style="info"
+                                                    state="vm.buttonState"
+                                                    label="Clear selection">
+                                        </umb-button>
 
-                                <div>
-                                    <umb-button action="vm.convertDataTypes()"
-                                                type="button"
-                                                button-style="info"
-                                                state="vm.convertDataTypesButtonState"
-                                                label="Convert ({{vm.selectedDataTypes.length}}) data types"
-                                                disabled="vm.selectedDataTypes.length == 0">
-                                    </umb-button>
+                                        {{vm.selectedDataTypes.length}} of {{vm.dataTypes.length}} selected
+                                    </div>
+
+                                    <div>
+                                        <umb-button action="vm.convertDataTypes()"
+                                                    type="button"
+                                                    button-style="info"
+                                                    state="vm.convertDataTypesButtonState"
+                                                    label="Convert ({{vm.selectedDataTypes.length}}) data types"
+                                                    disabled="vm.selectedDataTypes.length == 0">
+                                        </umb-button>
+                                    </div>
                                 </div>
-                            </div>
-                        </umb-box-content>
-                    </umb-box>-->
+                            </umb-box-content>
+                        </div>
+                    </umb-box>
                 </div>
                 <div class="umb-logviewer__sidebar">
                     <umb-box>
                         <umb-box-header title="Settings"></umb-box-header>
                         <umb-box-content>
-                            <umb-code-snippet language="'json'">{{vm.appSettings}}</umb-code-snippet>
+                            <umb-code-snippet class="db mb4" language="'json'">{{vm.appSettings}}</umb-code-snippet>
+                            <p class="mb0">
+                                <strong>NameFormatting</strong>
+                            </p>
+                            <p>Refers to the name of the data type.</p>
+
+                            <p class="mb0">
+                                <strong>AliasFormatting</strong>
+                            </p>
+                            <p>Refers to the alias of the property that will be added to the document type.</p>
                         </umb-box-content>
                     </umb-box>
                 </div>

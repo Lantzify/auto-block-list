@@ -1,9 +1,4 @@
-angular.module("umbraco").controller("autoBlockList.converting.controller", function (
-    $http,
-    $scope,
-    editorService,
-    overlayService,
-    notificationsService) {
+angular.module("umbraco").controller("autoBlockList.converting.controller", function ($http, $scope) {
 
     var vm = this;
 
@@ -35,24 +30,30 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
             }
         }).then(function (convertedDataTypeResponse) {
 
-            vm.report.push(convertedDataTypeResponse.data)
+            var response = convertedDataTypeResponse.data;
 
-            var item = convertedDataTypeResponse.data.item;
+            vm.report.push(response)
 
-            if (item !== "") {
-                vm.dataTypes[counter] = item;
-            }
+            if (response.errorMessage) {
+                vm.showReport = true;
+            }else{
+                var item = response.item;
 
-            counter += 1;
+                if (item !== "") {
+                    vm.dataTypes[counter] = item;
+                }
 
-            if (counter !== vm.dataTypeCounter) {
-                console.log(vm.dataTypes[counter])
-                convertDataTypes(counter);
-            } else {
-                setTimeout(function () {
-                    vm.percentage = 30;
-                    getContentTypes(0);
-                }, 1000)
+                counter += 1;
+
+
+                if (counter !== vm.dataTypeCounter) {
+                    convertDataTypes(counter);
+                } else {
+                    setTimeout(function () {
+                        vm.percentage = 30;
+                        getContentTypes(0);
+                    }, 1000)
+                }
             }
         });
     }
@@ -91,24 +92,28 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
 
             dataTypeCounter += 1;
 
-            //If all data types has been added. Next content type
-            if (dataTypeCounter === vm.dataTypeCounter) {
-                contentTypecounter += 1;
-            }
-
-            if (dataTypeCounter !== vm.dataTypeCounter) {
-                addDataTypeToContentType(dataTypeCounter, contentTypecounter);
-            } else if (contentTypecounter !== vm.contentTypes.length) {
-                //If all data types has been added. Reset data type
-                if (dataTypeCounter === vm.dataTypeCounter) {
-                    dataTypeCounter = 0;
-                }
-                addDataTypeToContentType(dataTypeCounter, contentTypecounter);
+            if (addDataTypeToContentTypeResponse.data.errorMessage) {
+                vm.showReport = true;
             } else {
-                setTimeout(function () {
-                    vm.percentage = 60;
-                    convertContent(0)
-                }, 1000)
+                //If all data types has been added. Next content type
+                if (dataTypeCounter === vm.dataTypeCounter) {
+                    contentTypecounter += 1;
+                }
+
+                if (dataTypeCounter !== vm.dataTypeCounter) {
+                    addDataTypeToContentType(dataTypeCounter, contentTypecounter);
+                } else if (contentTypecounter !== vm.contentTypes.length) {
+                    //If all data types has been added. Reset data type
+                    if (dataTypeCounter === vm.dataTypeCounter) {
+                        dataTypeCounter = 0;
+                    }
+                    addDataTypeToContentType(dataTypeCounter, contentTypecounter);
+                } else {
+                    setTimeout(function () {
+                        vm.percentage = 60;
+                        convertContent(0)
+                    }, 1000)
+                }
             }
         });
     }
@@ -126,14 +131,15 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
                 contentId: $scope.model.content.id,
             }
         }).then(function (convertContentResponse) {
-            vm.report.push(convertContentResponse.data)
+
+            vm.report = vm.report.concat(convertContentResponse.data);
 
             vm.task = "";
             vm.currentTask = "";
             vm.percentage = 100;   
 
             vm.showReport = true;
+            $scope.model.disableSubmitButton = false;
         });
     }
-
 });

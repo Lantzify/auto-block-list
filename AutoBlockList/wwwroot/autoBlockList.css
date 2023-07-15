@@ -1,0 +1,24 @@
+.autoBlockList .umb-progress-bar__progress {
+    transition: all 1s;
+}
+
+
+.autoBlockList .umb-progress-bar umb-progress-bar--s {
+    transition: all 1s;
+}
+
+.autoBlockList.overlay .umb-table__name {
+    max-width: 100%;
+    display: block;
+    overflow: auto;
+}
+
+.autoBlockList.overlay .errorMessage {
+    display: block;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.autoBlockList.overlay .umb-table-cell > * {
+    white-space: pre-line;
+}

@@ -15,7 +15,7 @@ namespace AutoBlockList.Backoffice
 {
     [PluginController("AutoBlockList")]
     [Authorize(Policy = AuthorizationPolicies.TreeAccessDocumentTypes)]
-    [Tree("settings", "autoBlockList", SortOrder = 12, TreeTitle = "Auto block list", TreeGroup = "dataBlockConverterGroup")]
+    [Tree("settings", "autoBlockList", SortOrder = 0, TreeTitle = "Auto block list", TreeGroup = "settingsGroup")]
     public class AutoBlockListTreeController : TreeController
     {
         private readonly IMenuItemCollectionFactory _menuItemCollectionFactory;

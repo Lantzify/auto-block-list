@@ -16,7 +16,7 @@ namespace AutoBlockList.Composers
             builder.Services.AddSingleton<IAutoBlockListService, AutoBlockListService>();
 
             builder.Services.AddOptions<AutoBlockListSettings>()
-                .Bind(builder.Config.GetSection(AutoBlockListSettings.DataBlockConverter));
+                .Bind(builder.Config.GetSection(AutoBlockListSettings.AutoBlockList));
         }
     }
 }

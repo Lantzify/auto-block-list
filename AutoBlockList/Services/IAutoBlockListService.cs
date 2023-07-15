@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using AutoBlockList.Dtos;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using static Umbraco.Cms.Core.Constants.Conventions;
-using AutoBlockList.Dtos;
 
 namespace AutoBlockList.Services
 {
     public interface IAutoBlockListService
     {
         IEnumerable<CustomDisplayDataType> GetDataTypesInContentType(IContentType contentType);
-        string TransferContent(IProperty property);
+        string TransferContent(IProperty property, string? culture = null);
         string GetNameFormatting();
         string GetAliasFormatting();
         IDataType? CreateBLDataType(IDataType ncDataType);

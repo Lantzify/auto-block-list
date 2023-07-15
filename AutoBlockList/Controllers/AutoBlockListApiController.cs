@@ -1,43 +1,48 @@
 ﻿using Umbraco.Cms.Core;
-using System.Xml.XPath;
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
 using AutoBlockList.Services;
 using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
 using Microsoft.AspNetCore.Mvc;
+using Umbraco.Cms.Core.Mapping;
 using Umbraco.Cms.Core.Services;
 using Microsoft.Extensions.Logging;
 using static Umbraco.Cms.Core.Constants;
+using Umbraco.Cms.Web.Common.Attributes;
 using Umbraco.Cms.Web.Common.Controllers;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.Cms.Core.Models.ContentEditing;
-using Umbraco.Cms.Web.BackOffice.Controllers;
-using ObjectTypes = Umbraco.Cms.Core.Models.ObjectTypes;
-using static Umbraco.Cms.Core.Models.ContentEditing.DataTypeReferences;
 
 namespace AutoBlockList.Controllers
 {
-    public class AutoBlockListApiController : UmbracoAuthorizedApiController
+    [IsBackOffice]
+    [Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
+    public class AutoBlockListApiController : UmbracoApiController
     {
-
+        private const string _checkLogs = "Check logs for futher details";
         private readonly IContentService _contentService;
         private readonly IDataTypeService _dataTypeService;
         private readonly ILogger<AutoBlockListApiController> _logger;
         private readonly IContentTypeService _contentTypeService;
-        private readonly IAutoBlockListService _dataBlockConverterService;
+        private readonly ILocalizationService _localizationService;
+        private readonly IAutoBlockListService _autoBlockListService;
 
-        public AutoBlockListApiController(IContentService contentService,
+        public AutoBlockListApiController(IUmbracoMapper umbracoMapper,
+            IContentService contentService,
             IDataTypeService dataTypeService,
             ILogger<AutoBlockListApiController> logger,
             IContentTypeService contentTypeService,
-            IAutoBlockListService dataBlockConverterService)
+             ILocalizationService localizationService,
+            IAutoBlockListService autoBlockListService)
         {
             _logger = logger;
             _contentService = contentService;
             _dataTypeService = dataTypeService;
             _contentTypeService = contentTypeService;
-            _dataBlockConverterService = dataBlockConverterService;
+            _localizationService = localizationService;
+            _autoBlockListService = autoBlockListService;
         }
 
         [HttpGet]
@@ -45,7 +50,7 @@ namespace AutoBlockList.Controllers
         {
             try
             {
-                var ncDataTypes = _dataBlockConverterService.GetAllNCDataTypes();
+                var ncDataTypes = _autoBlockListService.GetAllNCDataTypes();
 
                 return ncDataTypes.ToList();
             }
@@ -61,7 +66,7 @@ namespace AutoBlockList.Controllers
         {
             var contentTypeReferences = new List<CustomContentTypeReferences>();
 
-            foreach (var dataType in _dataBlockConverterService.GetAllNCDataTypes())
+            foreach (var dataType in _autoBlockListService.GetAllNCDataTypes())
             {
                 var result = new DataTypeReferences();
                 var usages = _dataTypeService.GetReferences(dataType.Id);
@@ -89,7 +94,9 @@ namespace AutoBlockList.Controllers
         [HttpGet]
         public IEnumerable<IContent> GetAllContentWithNC()
         {
-            return _contentService.GetPagedOfTypes(GetAllNCContentTypes().Select(x => x.Id).ToArray(), 0, 100, out long totalRecords, null, null);
+            var contentTypeIds = GetAllNCContentTypes().Select(x => x.Id).ToArray();
+            var items = _contentService.GetPagedOfTypes(contentTypeIds, 0, 100, out long totalRecords, null, null);
+            return items;
         }
 
 
@@ -101,7 +108,7 @@ namespace AutoBlockList.Controllers
             if (contentType == null)
                 return null;
 
-            return _dataBlockConverterService.GetDataTypesInContentType(contentType);
+            return _autoBlockListService.GetDataTypesInContentType(contentType);
         }
 
         [HttpPost]
@@ -115,8 +122,9 @@ namespace AutoBlockList.Controllers
             try
             {
                 IDataType dataType = _dataTypeService.GetDataType(dto.Id);
+                convertReport.Task = string.Format("Converting '{0}' to Block list", dataType.Name);
 
-                var blDataType = _dataBlockConverterService.CreateBLDataType(dataType);
+                var blDataType = _autoBlockListService.CreateBLDataType(dataType);
                 var existingDataType = _dataTypeService.GetDataType(blDataType.Name);
 
                 var returnDataType = new CustomDisplayDataType()
@@ -148,10 +156,10 @@ namespace AutoBlockList.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to convert  to block list.");
+                _logger.LogError(ex, string.Format("Failed to convert NC with id '{0}' to block list.", dto.Id));
 
-                convertReport.ErrorMessage = ex.Message;
-                convertReport.Status = AutoBlockListConstants.Status.Success;
+                convertReport.ErrorMessage = _checkLogs;
+                convertReport.Status = AutoBlockListConstants.Status.Failed;
 
                 return convertReport;
             }
@@ -161,7 +169,7 @@ namespace AutoBlockList.Controllers
         {
             var elementContentTypes = new List<CustomContentTypeReferences>();
 
-            foreach (var elementContentType in _dataBlockConverterService.GetElementContentTypesFromDataType(_dataTypeService.GetDataType(dataTypeId)))
+            foreach (var elementContentType in _autoBlockListService.GetElementContentTypesFromDataType(_dataTypeService.GetDataType(dataTypeId)))
             {
                 elementContentTypes.Add(new CustomContentTypeReferences()
                 {
@@ -189,74 +197,123 @@ namespace AutoBlockList.Controllers
             var contentType = _contentTypeService.Get(dto.ContentTypeId);
             if (contentType == null)
             {
-                convertReport.ErrorMessage = "Failed to find doucment type with id " + dto.ContentTypeId.ToString();
+                convertReport.ErrorMessage = string.Format("Failed to find doucment type with id '{0}'", dto.ContentTypeId);
                 return convertReport;
             }
 
             var blDataType = _dataTypeService.GetDataType(dto.NewDataTypeId);
             if (blDataType == null)
             {
-                convertReport.ErrorMessage = "Failed to find block list data type with id " + dto.ContentTypeId.ToString();
+                convertReport.ErrorMessage = string.Format("Failed to find block list data type with id '{0}'", dto.NewDataTypeId);
                 return convertReport;
             }
 
             var ncDataType = _dataTypeService.GetDataType(dto.OldDataTypeId);
             if (ncDataType == null)
             {
-                convertReport.ErrorMessage = "Failed to find doucment type with id " + dto.ContentTypeId.ToString();
+                convertReport.ErrorMessage = string.Format("Failed to find NC data type with id '{0}'", dto.OldDataTypeId);
                 return convertReport;
             }
 
-            var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == dto.OldDataTypeId);
-
-
-            convertReport.Task = string.Format("Adding data type {0} to document type {1}", blDataType.Name, contentType.Name);
-            if (contentType.PropertyTypeExists(string.Format(_dataBlockConverterService.GetAliasFormatting(), propertyType.Alias)))
+            try
             {
-                convertReport.Status = AutoBlockListConstants.Status.Skipped;
-                return convertReport;
+                var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == dto.OldDataTypeId);
+
+                convertReport.Task = string.Format("Adding data type '{0}' to document type '{1}'", blDataType.Name, contentType.Name);
+                if (contentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
+                {
+                    convertReport.Status = AutoBlockListConstants.Status.Skipped;
+                    return convertReport;
+                }
+
+                contentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
+                contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
+                _contentTypeService.Save(contentType);
+
+                convertReport.Status = AutoBlockListConstants.Status.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, string.Format("Failed to add block list with id '{0}' proprty to document type with id '{1}'", dto.NewDataTypeId, dto.ContentTypeId));
+
+                convertReport.ErrorMessage = _checkLogs;
             }
 
-            contentType.AddPropertyType(_dataBlockConverterService.MapPropertyType(propertyType, ncDataType, blDataType),
-            contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
-
-            _contentTypeService.Save(contentType);
-
-            convertReport.Status = AutoBlockListConstants.Status.Success;
             return convertReport;
         }
 
         [HttpPost]
-        public ConvertReport TransferContent(TransferContentDto dto)
+        public IEnumerable<ConvertReport> TransferContent(TransferContentDto dto)
         {
-            var convertReport = new ConvertReport()
-            {
-                Task = "Coverting content",
-                Status = AutoBlockListConstants.Status.Failed
-            };
+            var convertReports = new List<ConvertReport>();
 
             var node = _contentService.GetById(dto.ContentId);
             if (node == null)
             {
-                convertReport.ErrorMessage = "Failed to find node with id " + dto.ContentId;
-                return convertReport;
+                convertReports.Add(new ConvertReport()
+                {
+                    Task = "Coverting content",
+                    ErrorMessage = string.Format("Failed to find node with id {0}", dto.ContentId),
+                    Status = AutoBlockListConstants.Status.Failed
+                });
+
+                return convertReports;
             }
 
             var allNCProperties = node.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent);
 
             foreach (var ncProperty in allNCProperties)
             {
-                node.SetValue(string.Format(_dataBlockConverterService.GetAliasFormatting(), ncProperty.Alias), _dataBlockConverterService.TransferContent(ncProperty));
+                if (ncProperty.PropertyType.VariesByCulture())
+                {
+                    foreach (var culture in _localizationService.GetAllLanguages())
+                    {
+                        var report = new ConvertReport()
+                        {
+                            Task = string.Format("Converting '{0}' for culture '{1}' to block list content", ncProperty.PropertyType.Name, culture.CultureName),
+                            Status = AutoBlockListConstants.Status.Failed
+                        };
+
+                        try
+                        {
+                            node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), _autoBlockListService.TransferContent(ncProperty, culture.IsoCode), culture.IsoCode);
+                            report.Status = AutoBlockListConstants.Status.Success;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to convert content '{0}' for culture '{1}' to block list", ncProperty.PropertyType.Name);
+                            report.ErrorMessage = _checkLogs;
+                        }
+
+                        convertReports.Add(report);
+                    }
+                }
+                else
+                {
+                    var report = new ConvertReport()
+                    {
+                        Task = string.Format("Converting '{0}' to block list content", ncProperty.PropertyType.Name),
+                        Status = AutoBlockListConstants.Status.Failed
+                    };
+
+                    try
+                    {
+                        node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), _autoBlockListService.TransferContent(ncProperty));
+                        report.Status = AutoBlockListConstants.Status.Success;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to convert content '{0}' to block list", ncProperty.PropertyType.Name);
+                        report.ErrorMessage = _checkLogs;
+                    }
+
+                    convertReports.Add(report);
+                }
             }
-
-
 
             _contentService.Save(node);
 
-            convertReport.Status = AutoBlockListConstants.Status.Success;
-
-            return convertReport;
+            return convertReports;
         }
-
     }
 }

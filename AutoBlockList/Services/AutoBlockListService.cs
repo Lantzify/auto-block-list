@@ -101,9 +101,9 @@ namespace AutoBlockList.Services
             return dataTypes;
         }
 
-        public string TransferContent(IProperty property)
+        public string TransferContent(IProperty property, string? culture = null)
         {
-            var ncValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(property.GetValue().ToString());
+            var ncValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(property.GetValue(culture).ToString());
 
             var contentData = ConvertNCDataToBLData(ncValues);
             var contentUdiList = new List<Dictionary<string, string>>();

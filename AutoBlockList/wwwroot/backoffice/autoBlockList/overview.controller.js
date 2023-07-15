@@ -9,6 +9,9 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     vm.loading = true;
     var title = "Auto block list";
 
+    vm.showDataTypesBox = false;
+    vm.showContentTypesBox = false;
+
     vm.selectedContentTypes = []
     vm.selectedDataTypes = []
 
@@ -23,7 +26,6 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     vm.page = {
         title: title,
-        description: "Overview of all avaible nested content you can convert."
     };
 
     vm.toggleSelect = function (id, array) {
@@ -39,14 +41,14 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     };
 
     $q.all({
-        //dataTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCDataTypes"),
-        //contentTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCContentTypes"),
+        dataTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCDataTypes"),
+        contentTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCContentTypes"),
         content: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC")
     }).then(function (promises) {
         vm.loading = false;
 
-        //vm.dataTypes = promises.dataTypes.data;
-        //vm.contentTypes = promises.contentTypes.data;
+        vm.dataTypes = promises.dataTypes.data;
+        vm.contentTypes = promises.contentTypes.data;
         vm.content = promises.content.data;
     }, function (err) {
         if (err.data && (err.data.message || err.data.Detail)) {
@@ -55,24 +57,35 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     });
 
     vm.convertContent = function (content) {
-        var options = {
-            view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
-            title: "Converting",
-            content: content,
-            disableBackdropClick: true,
-            disableEscKey: true,
-            disableSubmitButton: true,
-            submitButtonLabel: "Confirm",
-            closeButtonLabel: "Close",
-            submit: function (model) {
-                
-            },
-            close: function () {
-                overlayService.close();
-            }
-        };
 
-        overlayService.open(options);
+        var confirmOptions = {
+            title: "Confirm '" + content.name + "' convert",
+            view: "/App_Plugins/AutoBlockList/components/overlays/confirm.html",
+            submit: function () {
+                var options = {
+                    view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
+                    title: "Converting",
+                    content: content,
+                    disableBackdropClick: true,
+                    disableEscKey: true,
+                    disableSubmitButton: true,
+                    submitButtonLabel: "Confirm",
+                    closeButtonLabel: "Close",
+                    submit: function (model) {
+                        overlayService.close();
+                    },
+                    close: function () {
+                        overlayService.close();
+                    }
+                };
+
+                overlayService.open(options);
+            }
+        }
+
+        overlayService.confirm(confirmOptions);
+
+
 
         //$http({
         //    method: "POST",

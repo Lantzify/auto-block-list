@@ -1,4 +1,4 @@
-﻿﻿<div ng-controller="autoBlockList.converting.controller as vm" class="dataBlockConverter">
+﻿﻿<div ng-controller="autoBlockList.converting.controller as vm" class="autoBlockList overlay">
 
      <div ng-if="!vm.showReport">
          <div class="flex justify-between">
@@ -38,9 +38,13 @@
                  <div class="umb-table-row" ng-repeat="report in vm.report">
                      <div class="umb-table-cell">
                          <umb-icon icon="icon-check color-green" ng-if="report.status == '0'"  class="umb-table-body__icon"></umb-icon>
-                         <umb-icon icon="icon-arrow-right color-grey" ng-if="report.status == '2'"  class="umb-table-body__icon"></umb-icon>
+                         <umb-icon title="Skipped. Already exists" icon="icon-arrow-right color-grey" ng-if="report.status == '1'"  class="umb-table-body__icon"></umb-icon>
+                         <umb-icon icon="icon-alert-alt color-red" ng-if="report.status == '2'"  class="umb-table-body__icon"></umb-icon>
                      </div>
-                     <div class="umb-table-cell umb-table__name"><span>{{report.task}}</span></div>
+                     <div class="umb-table-cell umb-table__name">
+                        <span>{{report.task}}</span>
+                        <span class="errorMessage">{{report.errorMessage}}</span>
+                     </div>
                  </div>
              </div>
          </div>

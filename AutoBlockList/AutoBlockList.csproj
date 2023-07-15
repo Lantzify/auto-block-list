@@ -1,18 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-		<StaticWebAssetBasePath>App_Plugins/DataBlockConverter</StaticWebAssetBasePath>
+		<TargetFramework>net6.0</TargetFramework>
+		<StaticWebAssetBasePath>App_Plugins/AutoBlockList</StaticWebAssetBasePath>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="11.2.2" />
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.6.1" />
 	</ItemGroup>
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
 		<PackageId>AutoBlockList</PackageId>
 		<Version>1.0.0</Version>
 		<Title>Auto block list</Title>

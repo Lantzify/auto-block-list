@@ -21,6 +21,6 @@ namespace AutoBlockList.Dtos
         public string? ErrorMessage { get; set; }
 
         [DataMember]
-        public object Item { get; set; }
+        public object? Item { get; set; }
     }
 }
