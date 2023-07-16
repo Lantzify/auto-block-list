@@ -22,3 +22,8 @@
 .autoBlockList.overlay .umb-table-cell > * {
     white-space: pre-line;
 }
+
+#autoBlockList .umb-table-body .umb-table-row:hover {
+    background-color: #f3f3f5;
+    cursor: pointer;
+}

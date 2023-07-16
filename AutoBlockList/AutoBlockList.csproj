@@ -19,8 +19,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Lantzify/auto-block-list</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Lantzify/auto-block-list</RepositoryUrl>
-		<Description></Description>
-		<Summary></Summary>
+		<Description>Auto block list is made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format.</Description>
+		<Summary>Auto block list is made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format. </Summary>
 		<PackageTags>umbraco package umbraco-marketplace</PackageTags>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -28,7 +28,7 @@
 
 		<ContentTargetFolders>content</ContentTargetFolders>
 
-		<PackageOutputPath>../../build/Release</PackageOutputPath>
+		<PackageOutputPath>build/Release</PackageOutputPath>
 
 	</PropertyGroup>
 

@@ -7,6 +7,7 @@ using AutoBlockList.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Core.Mapping;
 using Umbraco.Cms.Core.Services;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using static Umbraco.Cms.Core.Constants;
 using Umbraco.Cms.Web.Common.Attributes;
@@ -29,7 +30,7 @@ namespace AutoBlockList.Controllers
         private readonly ILocalizationService _localizationService;
         private readonly IAutoBlockListService _autoBlockListService;
 
-        public AutoBlockListApiController(IUmbracoMapper umbracoMapper,
+        public AutoBlockListApiController(
             IContentService contentService,
             IDataTypeService dataTypeService,
             ILogger<AutoBlockListApiController> logger,
@@ -46,22 +47,6 @@ namespace AutoBlockList.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<CustomDisplayDataType>> GetAllNCDataTypes()
-        {
-            try
-            {
-                var ncDataTypes = _autoBlockListService.GetAllNCDataTypes();
-
-                return ncDataTypes.ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to retive all nested content data types.");
-                return ValidationProblem("Data block converter", "Failed to retive all nested content data types.");
-            }
-        }
-
-        [HttpGet]
         public IEnumerable<CustomContentTypeReferences> GetAllNCContentTypes()
         {
             var contentTypeReferences = new List<CustomContentTypeReferences>();
@@ -75,7 +60,7 @@ namespace AutoBlockList.Controllers
                 {
                     var contentType = _contentTypeService.Get(((GuidUdi)entityType.Key).Guid);
 
-                    if (contentType != null)
+                    if (contentType != null && !contentTypeReferences.Any(x => x.Id == contentType.Id))
                         contentTypeReferences.Add(new CustomContentTypeReferences()
                         {
                             Id = contentType.Id,
@@ -92,11 +77,20 @@ namespace AutoBlockList.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<IContent> GetAllContentWithNC()
+        public PagedResult<AutoBlockListContent> GetAllContentWithNC(int page)
         {
+           
             var contentTypeIds = GetAllNCContentTypes().Select(x => x.Id).ToArray();
-            var items = _contentService.GetPagedOfTypes(contentTypeIds, 0, 100, out long totalRecords, null, null);
-            return items;
+            var items = _contentService.GetPagedOfTypes(contentTypeIds, page, 10, out long totalRecords, null, null);
+
+            var result = new PagedResult<AutoBlockListContent>(totalRecords, page, 10);
+            result.Items = items.Select(x => new AutoBlockListContent()
+            {
+                ContentType = x.ContentType,
+                Name = x.Name,
+            });
+
+            return result;
         }
 
 

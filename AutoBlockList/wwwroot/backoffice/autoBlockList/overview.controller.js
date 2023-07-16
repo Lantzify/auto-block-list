@@ -7,13 +7,8 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     var vm = this;
     vm.loading = true;
-    var title = "Auto block list";
 
-    vm.showDataTypesBox = false;
-    vm.showContentTypesBox = false;
-
-    vm.selectedContentTypes = []
-    vm.selectedDataTypes = []
+    vm.selectedContent = []
 
     var appSettings = {
         AutoBlockList: {
@@ -24,37 +19,46 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     vm.appSettings = JSON.stringify(appSettings, null, 4);
 
-    vm.page = {
-        title: title,
-    };
-
-    vm.toggleSelect = function (id, array) {
-        if (array.indexOf(id) !== -1) {
-            array.splice(array.indexOf(id), 1);
+    vm.toggleSelect = function (id) {
+        if (vm.selectedContent.indexOf(id) !== -1) {
+            vm.selectedContent.splice(vm.selectedContent.indexOf(id), 1);
         } else {
-            array.push(id);
+            vm.selectedContent.push(id);
         }
     };
 
-    vm.clearSelection = function (array) {
-        array.splice(0, array.length);
+    vm.clearSelection = function () {
+        vm.selectedContent = [];
     };
 
-    $q.all({
-        dataTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCDataTypes"),
-        contentTypes: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllNCContentTypes"),
-        content: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC")
-    }).then(function (promises) {
+    $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC").then(function (response) {
         vm.loading = false;
 
-        vm.dataTypes = promises.dataTypes.data;
-        vm.contentTypes = promises.contentTypes.data;
-        vm.content = promises.content.data;
-    }, function (err) {
-        if (err.data && (err.data.message || err.data.Detail)) {
-            notificationsService.error(title, err.data.message ?? err.data.Detail);
-        }
+        vm.pagedContent = response.data;
+
+        console.log(vm.pagedContent)
+
+        vm.page = 1;
+        vm.totalPages = Math.ceil(vm.content.length / 10);
+
+        vm.filteredContent = vm.content.slice(0, 10)
     });
+
+    vm.paginator = function (page) {
+        vm.filteredContent = vm.content.slice((page - 1) * 10, (page - 1) * 10 + 10)
+    }
+
+    vm.nextPage = function () {
+        vm.paginator(vm.page += 1);
+    }
+
+    vm.prevPage = function () {
+        vm.paginator(vm.page -= 1);
+    }
+
+    vm.goToPage = function (pageNumber) {
+        vm.paginator(vm.page = pageNumber);
+    }
 
     vm.convertContent = function (content) {
 
@@ -84,61 +88,12 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         }
 
         overlayService.confirm(confirmOptions);
-
-
-
-        //$http({
-        //    method: "POST",
-        //    url: "/umbraco/backoffice/api/AutoBlockListApi/ConverNCDataType",
-        //    data: vm.selectedDataTypes
-        //}).then(function (response) {
-        //    vm.convertDataTypesButtonState = "success";
-        //    notificationsService.success(title, "");
-        //}, function (err) {
-        //    vm.convertDataTypesButtonState = "error";
-        //    if (err.data && (err.data.message || err.data.Detail)) {
-        //        notificationsService.error(title, err.data.message ?? err.data.Detail);
-        //    }
-        //});
     }
 
-    vm.convertDataTypes = function () {
-
-        vm.convertDataTypesButtonState = "busy";
-
-        $http({
-            method: "POST",
-            url: "/umbraco/backoffice/api/AutoBlockListApi/ConverNCDataType",
-            data: vm.selectedDataTypes
-        }).then(function (response) {
-            vm.convertDataTypesButtonState = "success";
-            notificationsService.success(title, "");
-        }, function (err) {
-            vm.convertDataTypesButtonState = "error";
-            if (err.data && (err.data.message || err.data.Detail)) {
-                notificationsService.error(title, err.data.message ?? err.data.Detail);
-            }
-        });
-    }
-
-    vm.convertContentType = function () {
-        vm.convertContentTypeButtonState = "busy";
-        $http({
-            method: "POST",
-            url: "/umbraco/backoffice/api/AutoBlockListApi/ConvertNCInContentType",
-            data: vm.selectedContentTypes
-        }).then(function (response) {
-            notificationsService.success(title, "")
-        }, function (err) {
-            if (err.data && (err.data.message || err.data.Detail)) {
-                notificationsService.error(title, err.data.message ?? err.data.Detail);
-            }
-        });
-    }
     vm.openContent = function (contentId) {
         var options = {
             id: contentId,
-            size: "medium",
+            size: "large",
             submit: function (model) {
                 editorService.close();
             },
@@ -147,35 +102,5 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
             }
         };
         editorService.contentEditor(options);
-    }
-
-    vm.openDocumentType = function (documentType) {
-        var options = {
-            id: documentType.id,
-            size: "medium",
-            submit: function (model) {
-                editorService.close();
-            },
-            close: function () {
-                editorService.close();
-            }
-        };
-        editorService.documentTypeEditor(options);
-    }
-
-    vm.openDataTypeSettings = function (dataTypeId) {
-        var dataTypeSettings = {
-            view: "views/common/infiniteeditors/datatypesettings/datatypesettings.html",
-            id: dataTypeId,
-            size: "medium",
-            submit: function (model) {
-                editorService.close();
-            },
-            close: function () {
-                editorService.close();
-            }
-        };
-
-        editorService.open(dataTypeSettings);
     }
 });
