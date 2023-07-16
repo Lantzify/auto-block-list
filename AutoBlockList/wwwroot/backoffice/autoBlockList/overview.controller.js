@@ -31,33 +31,30 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.selectedContent = [];
     };
 
-    $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC").then(function (response) {
+    $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=0").then(function (response) {
         vm.loading = false;
 
         vm.pagedContent = response.data;
 
-        console.log(vm.pagedContent)
-
-        vm.page = 1;
-        vm.totalPages = Math.ceil(vm.content.length / 10);
-
-        vm.filteredContent = vm.content.slice(0, 10)
     });
 
     vm.paginator = function (page) {
-        vm.filteredContent = vm.content.slice((page - 1) * 10, (page - 1) * 10 + 10)
+        $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=" + page).then(function (response) {
+            vm.pagedContent = response.data;
+
+        });
     }
 
     vm.nextPage = function () {
-        vm.paginator(vm.page += 1);
+        vm.paginator(vm.pagedContent.pageNumber += 1);
     }
 
     vm.prevPage = function () {
-        vm.paginator(vm.page -= 1);
+        vm.paginator(vm.pagedContent.pageNumber);
     }
 
     vm.goToPage = function (pageNumber) {
-        vm.paginator(vm.page = pageNumber);
+        vm.paginator(pageNumber);
     }
 
     vm.convertContent = function (content) {
