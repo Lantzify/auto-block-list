@@ -1,9 +1,7 @@
 angular.module("umbraco").controller("autoBlockList.overview.controller", function (
-    $q,
     $http,
     editorService,
-    overlayService,
-    notificationsService) {
+    overlayService) {
 
     var vm = this;
     vm.loading = true;
@@ -27,40 +25,49 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         }
     };
 
+    vm.toggleSelectAll = function () {
+        vm.pagedContent.items.forEach(function (e) {
+            if (vm.selectedContent.indexOf(e.id) === -1) {
+                vm.selectedContent.push(e.id);
+            }
+        });
+    };
+
     vm.clearSelection = function () {
         vm.selectedContent = [];
     };
 
     $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=0").then(function (response) {
         vm.loading = false;
-
         vm.pagedContent = response.data;
-
+        vm.pagedContent.pageNumber += 1;
+        console.log(response)
     });
 
     vm.paginator = function (page) {
+        vm.loadingTable = true;
         $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=" + page).then(function (response) {
             vm.pagedContent = response.data;
-
+            vm.loadingTable = false;
         });
-    }
+    };
 
     vm.nextPage = function () {
         vm.paginator(vm.pagedContent.pageNumber += 1);
-    }
+    };
 
     vm.prevPage = function () {
-        vm.paginator(vm.pagedContent.pageNumber);
-    }
+        vm.paginator(vm.pagedContent.pageNumber -= 1);
+    };
 
     vm.goToPage = function (pageNumber) {
         vm.paginator(pageNumber);
-    }
+    };
 
     vm.convertContent = function (content) {
 
         var confirmOptions = {
-            title: "Confirm '" + content.name + "' convert",
+            title: "Confirm '" + vm.selectedContent.length + "' convert",
             view: "/App_Plugins/AutoBlockList/components/overlays/confirm.html",
             submit: function () {
                 var options = {

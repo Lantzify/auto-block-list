@@ -2,6 +2,7 @@
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
 using AutoBlockList.Services;
+using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -23,15 +24,16 @@ namespace AutoBlockList.Controllers
     public class AutoBlockListApiController : UmbracoApiController
     {
         private const string _checkLogs = "Check logs for futher details";
-        private readonly IContentService _contentService;
+		private readonly IAppPolicyCache _runtimeCache;
+		private readonly IContentService _contentService;
         private readonly IDataTypeService _dataTypeService;
         private readonly ILogger<AutoBlockListApiController> _logger;
         private readonly IContentTypeService _contentTypeService;
         private readonly ILocalizationService _localizationService;
         private readonly IAutoBlockListService _autoBlockListService;
 
-        public AutoBlockListApiController(
-            IContentService contentService,
+        public AutoBlockListApiController(AppCaches appCaches,
+			IContentService contentService,
             IDataTypeService dataTypeService,
             ILogger<AutoBlockListApiController> logger,
             IContentTypeService contentTypeService,
@@ -39,6 +41,7 @@ namespace AutoBlockList.Controllers
             IAutoBlockListService autoBlockListService)
         {
             _logger = logger;
+            _runtimeCache = appCaches.RuntimeCache;
             _contentService = contentService;
             _dataTypeService = dataTypeService;
             _contentTypeService = contentTypeService;
@@ -79,16 +82,23 @@ namespace AutoBlockList.Controllers
         [HttpGet]
         public PagedResult<AutoBlockListContent> GetAllContentWithNC(int page)
         {
-           
-            var contentTypeIds = GetAllNCContentTypes().Select(x => x.Id).ToArray();
-            var items = _contentService.GetPagedOfTypes(contentTypeIds, page, 10, out long totalRecords, null, null);
 
-            var result = new PagedResult<AutoBlockListContent>(totalRecords, page, 10);
+            var contentTypeIds = _runtimeCache.GetCacheItem("AutoBlockListContentTypes", () =>
+            {
+                return GetAllNCContentTypes();
+			})?.Select(x => x.Id).ToArray();
+
+            var items = _contentService.GetPagedOfTypes(contentTypeIds, page, 50, out long totalRecords, null, null);
+
+            var result = new PagedResult<AutoBlockListContent>(totalRecords, page, 50);
             result.Items = items.Select(x => new AutoBlockListContent()
             {
                 ContentType = x.ContentType,
                 Name = x.Name,
+                Id = x.Id
             });
+
+            items.FirstOrDefault().GetPropertiesByEditor(PropertyEditors.Aliases.NestedContent).FirstOrDefault();
 
             return result;
         }
@@ -98,9 +108,9 @@ namespace AutoBlockList.Controllers
 
         public IEnumerable<CustomDisplayDataType> GetDataTypesInContentType(Guid key)
         {
-            var contentType = _contentTypeService.Get(key);
+			var contentType = _contentTypeService.Get(key);
             if (contentType == null)
-                return null;
+				return new List<CustomDisplayDataType>();
 
             return _autoBlockListService.GetDataTypesInContentType(contentType);
         }

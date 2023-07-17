@@ -2,7 +2,6 @@
 using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
-using AutoBlockList.Dtos;
 using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Strings;
@@ -12,8 +11,6 @@ using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
 using DataType = Umbraco.Cms.Core.Models.DataType;
-using ObjectTypes = Umbraco.Cms.Core.Models.ObjectTypes;
-using Umbraco.Cms.Infrastructure.PublishedCache.DataSource;
 using static Umbraco.Cms.Core.PropertyEditors.BlockListConfiguration;
 
 namespace AutoBlockList.Services
@@ -62,8 +59,8 @@ namespace AutoBlockList.Services
                 {
                     ValidationLimit = new NumberRange()
                     {
-                        Max = ncConfig.MaxItems,
-                        Min = ncConfig.MinItems
+                        Max = ncConfig?.MaxItems,
+                        Min = ncConfig?.MinItems
                     },
                 },
             };
@@ -94,7 +91,7 @@ namespace AutoBlockList.Services
                 {
                     Id = dataType.Id,
                     Name = dataType.Name,
-                    Icon = dataType.Editor.Icon,
+                    Icon = dataType.Editor?.Icon,
                     MatchingBLId = _dataTypeService.GetDataType(string.Format(GetNameFormatting(), dataType.Name))?.Id
                 });
 
@@ -225,7 +222,7 @@ namespace AutoBlockList.Services
                     dataTypes.Add(new CustomDisplayDataType()
                     {
                         Id = dataType.Id,
-                        Icon = dataType.Editor.Icon,
+                        Icon = dataType.Editor?.Icon,
                         Name = dataType.Name,
                     });
                 }

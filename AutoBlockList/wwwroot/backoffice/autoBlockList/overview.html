@@ -17,11 +17,17 @@
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
-                            <div>
-                                <div class="umb-table">
+                            <div class="relative">
+                                <umb-load-indicator ng-if="vm.loadingTable"></umb-load-indicator>
+
+                                <div class="umb-table" ng-if="!vm.loadingTable">
                                     <div class="umb-table-head">
                                         <div class="umb-table-row">
-                                            <div class="umb-table-cell"></div>
+                                            <div class="umb-table-cell">
+                                                <button type="button" class="umb-table__action" ng-click="vm.toggleSelectAll()">
+                                                    <i class="icon-check umb-checkmark umb-checkmark--xs umb-outline" checked="checked" size="xs"></i>
+                                                </button>
+                                            </div>
                                             <div class="umb-table-cell umb-table__name not-fixed"><localize key="general_name">Name</localize></div>
                                             <div class="umb-table-cell umb-table-cell--nano"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
                                             <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
@@ -57,7 +63,7 @@
                                                     label="Clear selection">
                                         </umb-button>
 
-                                        {{vm.selectedContent.length}} of {{vm.content.length}} selected
+                                        {{vm.selectedContent.length}} of {{vm.pagedContent.totalItems}} selected
                                     </div>
 
                                     <div>
@@ -70,14 +76,14 @@
                                         </umb-button>
                                     </div>
                                 </div>
-
+                            </div>
                                 <umb-pagination page-number="vm.pagedContent.pageNumber"
-                                                total-pages="vm.pagedContent.totalPages"
+                                                total-pages="vm.pagedContent.totalPages - 1"
                                                 on-next="vm.nextPage"
                                                 on-prev="vm.prevPage"
                                                 on-go-to-page="vm.goToPage">
                                 </umb-pagination>
-                            </div>
+                         
                         </umb-box-content>
                     </umb-box>
                 </div>
