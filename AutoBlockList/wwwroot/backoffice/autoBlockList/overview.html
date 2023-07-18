@@ -17,6 +17,28 @@
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
+                            <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedContent.length">
+                                <div>
+                                    <umb-button action="vm.clearSelection()"
+                                                class="mr2"
+                                                type="button"
+                                                button-style="info"
+                                                state="vm.buttonState"
+                                                label="Clear selection">
+                                    </umb-button>
+
+                                    {{vm.selectedContent.length}} of {{vm.pagedContent.totalItems}} selected
+                                </div>
+
+                                <div>
+                                    <umb-button action="vm.convertContent()"
+                                                type="button"
+                                                button-style="info"
+                                                label="Convert ({{vm.selectedContent.length}}) nodes"
+                                                disabled="vm.selectedContent.length == 0">
+                                    </umb-button>
+                                </div>
+                            </div>
                             <div class="relative">
                                 <umb-load-indicator ng-if="vm.loadingTable"></umb-load-indicator>
 
@@ -34,9 +56,9 @@
                                         </div>
                                     </div>
                                     <div class="umb-table-body">
-                                        <div class="umb-table-row" ng-repeat="page in vm.pagedContent.items" ng-click="vm.toggleSelect(page.id)">
+                                        <div class="umb-table-row" ng-repeat="page in vm.pagedContent.items" ng-click="vm.toggleSelect(page)" ng-class="{'-selected' : vm.findIndex(vm.selectedContent, page.id) !== -1}">
                                             <div class="umb-table-cell">
-                                                <umb-icon icon="{{vm.selectedContent.indexOf(page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
+                                                <umb-icon icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
                                             <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
                                             <div class="umb-table-cell">
@@ -53,37 +75,15 @@
                                     </div>
                                 </div>
 
-                                <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedContent.length">
-                                    <div>
-                                        <umb-button action="vm.clearSelection()"
-                                                    class="mr2"
-                                                    type="button"
-                                                    button-style="info"
-                                                    state="vm.buttonState"
-                                                    label="Clear selection">
-                                        </umb-button>
 
-                                        {{vm.selectedContent.length}} of {{vm.pagedContent.totalItems}} selected
-                                    </div>
-
-                                    <div>
-                                        <umb-button action="vm.convertDataTypes()"
-                                                    type="button"
-                                                    button-style="info"
-                                                    state="vm.convertDataTypesButtonState"
-                                                    label="Convert ({{vm.selectedContent.length}}) nodes"
-                                                    disabled="vm.selectedContent.length == 0">
-                                        </umb-button>
-                                    </div>
-                                </div>
                             </div>
-                                <umb-pagination page-number="vm.pagedContent.pageNumber"
-                                                total-pages="vm.pagedContent.totalPages - 1"
-                                                on-next="vm.nextPage"
-                                                on-prev="vm.prevPage"
-                                                on-go-to-page="vm.goToPage">
-                                </umb-pagination>
-                         
+                            <umb-pagination page-number="vm.pagedContent.pageNumber"
+                                            total-pages="vm.pagedContent.totalPages - 1"
+                                            on-next="vm.nextPage"
+                                            on-prev="vm.prevPage"
+                                            on-go-to-page="vm.goToPage">
+                            </umb-pagination>
+
                         </umb-box-content>
                     </umb-box>
                 </div>

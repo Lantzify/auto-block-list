@@ -11,7 +11,10 @@ namespace AutoBlockList.Dtos
 		[DataMember]
         public string? Name { get; set; }
 
-        [DataMember]
+		[DataMember]
+		public bool HasBLAssociated { get; set; }
+
+		[DataMember]
         public ISimpleContentType? ContentType { get; set; }
     }
 }

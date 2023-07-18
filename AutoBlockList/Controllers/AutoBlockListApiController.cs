@@ -95,10 +95,9 @@ namespace AutoBlockList.Controllers
             {
                 ContentType = x.ContentType,
                 Name = x.Name,
-                Id = x.Id
+                Id = x.Id,
+                HasBLAssociated = _autoBlockListService.HasBLAssociated(x)
             });
-
-            items.FirstOrDefault().GetPropertiesByEditor(PropertyEditors.Aliases.NestedContent).FirstOrDefault();
 
             return result;
         }

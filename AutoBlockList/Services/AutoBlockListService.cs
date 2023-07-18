@@ -11,6 +11,7 @@ using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
 using DataType = Umbraco.Cms.Core.Models.DataType;
+using static Umbraco.Cms.Core.Constants.HttpContext;
 using static Umbraco.Cms.Core.PropertyEditors.BlockListConfiguration;
 
 namespace AutoBlockList.Services
@@ -255,5 +256,32 @@ namespace AutoBlockList.Services
 
             return contentTypeReferences;
         }
-    }
+
+		public bool HasBLAssociated(IContent content)
+		{
+			var ncs = content.GetPropertiesByEditor(PropertyEditors.Aliases.NestedContent);
+            var bls = content.GetPropertiesByEditor(PropertyEditors.Aliases.BlockList);
+            var boolList = new List<bool>();
+
+
+            if (ncs.Count() != bls.Count())
+                return false;
+
+            foreach (var nc in ncs)
+            {
+                var foo = content.GetValue(nc.Alias);
+                var bar = content.GetValue(string.Format(GetAliasFormatting(), nc.Alias));
+
+                if(foo == null && bar == null)
+                    boolList.Add(true);
+
+				if (foo != null && bar != null)
+					boolList.Add(true);
+
+			}
+
+
+            return false;
+		}
+	}
 }

@@ -17,18 +17,22 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     vm.appSettings = JSON.stringify(appSettings, null, 4);
 
-    vm.toggleSelect = function (id) {
-        if (vm.selectedContent.indexOf(id) !== -1) {
-            vm.selectedContent.splice(vm.selectedContent.indexOf(id), 1);
+    vm.toggleSelect = function (content) {
+        var pos = vm.findIndex(vm.selectedContent, content.id);
+
+        if (pos !== -1) {
+            vm.selectedContent.splice(pos, 1);
         } else {
-            vm.selectedContent.push(id);
+            vm.selectedContent.push(content);
         }
     };
 
     vm.toggleSelectAll = function () {
         vm.pagedContent.items.forEach(function (e) {
-            if (vm.selectedContent.indexOf(e.id) === -1) {
-                vm.selectedContent.push(e.id);
+            var pos = vm.findIndex(vm.selectedContent, e.id);
+
+            if (pos !== -11) {
+                vm.selectedContent.push(e);
             }
         });
     };
@@ -64,7 +68,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.paginator(pageNumber);
     };
 
-    vm.convertContent = function (content) {
+    vm.convertContent = function () {
 
         var confirmOptions = {
             title: "Confirm '" + vm.selectedContent.length + "' convert",
@@ -73,7 +77,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                 var options = {
                     view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
                     title: "Converting",
-                    content: content,
+                    content: vm.selectedContent,
                     disableBackdropClick: true,
                     disableEscKey: true,
                     disableSubmitButton: true,
@@ -106,5 +110,11 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
             }
         };
         editorService.contentEditor(options);
-    }
+    };
+
+    vm.findIndex = function (arr, id) {
+        return arr.findIndex(function (index) {
+            return index.id === id;
+        });
+    };
 });
