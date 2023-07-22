@@ -29,9 +29,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     vm.toggleSelectAll = function () {
         vm.pagedContent.items.forEach(function (e) {
-            var pos = vm.findIndex(vm.selectedContent, e.id);
-
-            if (pos !== -11) {
+            if (vm.findIndex(vm.selectedContent, e.id) === -1) {
                 vm.selectedContent.push(e);
             }
         });
@@ -45,7 +43,6 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.loading = false;
         vm.pagedContent = response.data;
         vm.pagedContent.pageNumber += 1;
-        console.log(response)
     });
 
     vm.paginator = function (page) {
@@ -71,7 +68,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     vm.convertContent = function () {
 
         var confirmOptions = {
-            title: "Confirm '" + vm.selectedContent.length + "' convert",
+            title: "Confirm convert",
             view: "/App_Plugins/AutoBlockList/components/overlays/confirm.html",
             submit: function () {
                 var options = {

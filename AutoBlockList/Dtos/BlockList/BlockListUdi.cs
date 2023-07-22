@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace AutoBlockList.Dtos
+namespace AutoBlockList.Dtos.BlockList
 {
     public class BlockListUdi
     {

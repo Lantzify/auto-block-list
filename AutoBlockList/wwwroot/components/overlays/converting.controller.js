@@ -1,145 +1,58 @@
-angular.module("umbraco").controller("autoBlockList.converting.controller", function ($http, $scope) {
+angular.module("umbraco").controller("autoBlockList.converting.controller", function ($http, $scope, assetsService) {
 
     var vm = this;
-
-    vm.task = "dataTypes";
-    vm.currentTask = "Converting data type ";
-    vm.percentage = 0;
     vm.report = [];
     vm.showReport = false;
+    vm.task = "";
+    vm.currentTask = "";
+    vm.item = "";
 
-    vm.contentTypes = [$scope.model.content.contentType];
+    $scope.model.title = "Converting 'Foo'";
+    $scope.model.subtitle = "1 of 100";
 
-    $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetDataTypesInContentType?key=" + $scope.model.content.contentType.key).then(function (response) {
-        vm.dataTypes = response.data;
-        vm.dataTypeCounter = vm.dataTypes.length;
+    var signalRScript = Umbraco.Sys.ServerVariables.umbracoSettings.umbracoPath + "/lib/signalr/signalr.min.js";
 
-        convertDataTypes(0);
-    });
+    assetsService.loadJs(signalRScript).then(function () {
+        var connection = new signalR.HubConnectionBuilder({
+            logging: true
+        }).withUrl("/umbraco/AutoBlockList/SyncHub").build();
 
-    function convertDataTypes(counter) {
+        connection.start().then(function () {
 
-        vm.currentTask = "Converting data types ";
-        vm.item = vm.dataTypes[counter].name;
-
-        $http({
-            method: "POST",
-            url: "/umbraco/backoffice/api/AutoBlockListApi/ConvertNCDataType",
-            data: {
-                id: vm.dataTypes[counter].id
-            }
-        }).then(function (convertedDataTypeResponse) {
-
-            var response = convertedDataTypeResponse.data;
-
-            vm.report.push(response)
-
-            if (response.errorMessage) {
-                vm.showReport = true;
-            }else{
-                var item = response.item;
-
-                if (item !== "") {
-                    vm.dataTypes[counter] = item;
+            $http({
+                method: "POST",
+                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert",
+                data: {
+                    Contents: $scope.model.content,
+                    ConnectionId: connection.connectionId
                 }
+            }).then(function (response) {
 
-                counter += 1;
+            });
 
-
-                if (counter !== vm.dataTypeCounter) {
-                    convertDataTypes(counter);
-                } else {
-                    setTimeout(function () {
-                        vm.percentage = 30;
-                        getContentTypes(0);
-                    }, 1000)
-                }
-            }
         });
-    }
 
-    function getContentTypes(counter) {
-        $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetContentTypesElement?dataTypeId=" + vm.dataTypes[counter].matchingBLId).then(function (response) {
-            counter += 1;
+        connection.on("AddReport", function (report) {
+            console.log("Runs")
+            console.log(report)
 
-            vm.contentTypes = vm.contentTypes.concat(response.data);
-
-            if (counter !== vm.dataTypeCounter) {
-                getContentTypes(counter);
-            } else {
-                addDataTypeToContentType(0, 0);
-            }
+            vm.report.push(report);
         });
-    }
 
-    function addDataTypeToContentType(dataTypeCounter, contentTypecounter) {
-
-        vm.task = "contentTypes";
-        vm.currentTask = "Adding data type to document type";
-        vm.item = vm.dataTypes[dataTypeCounter].name;
-        vm.item2 = vm.contentTypes[contentTypecounter].name;
-        $http({
-            method: "POST",
-            url: "/umbraco/backoffice/api/AutoBlockListApi/AddDataTypeToContentType",
-            data: {
-                contentTypeId: vm.contentTypes[contentTypecounter].id,
-                newDataTypeId: vm.dataTypes[dataTypeCounter].id,
-                oldDataTypeId: vm.dataTypes[dataTypeCounter].matchingBLId,
-            }
-        }).then(function (addDataTypeToContentTypeResponse) {
-
-            vm.report.push(addDataTypeToContentTypeResponse.data)
-
-            dataTypeCounter += 1;
-
-            if (addDataTypeToContentTypeResponse.data.errorMessage) {
-                vm.showReport = true;
-            } else {
-                //If all data types has been added. Next content type
-                if (dataTypeCounter === vm.dataTypeCounter) {
-                    contentTypecounter += 1;
-                }
-
-                if (dataTypeCounter !== vm.dataTypeCounter) {
-                    addDataTypeToContentType(dataTypeCounter, contentTypecounter);
-                } else if (contentTypecounter !== vm.contentTypes.length) {
-                    //If all data types has been added. Reset data type
-                    if (dataTypeCounter === vm.dataTypeCounter) {
-                        dataTypeCounter = 0;
-                    }
-                    addDataTypeToContentType(dataTypeCounter, contentTypecounter);
-                } else {
-                    setTimeout(function () {
-                        vm.percentage = 60;
-                        convertContent(0)
-                    }, 1000)
-                }
-            }
+        connection.on("UpdateTask", function (task) {
+            console.log("Runs")
+            console.log(task)
+            vm.task = task; 
         });
-    }
 
-    function convertContent(counter) {
+        connection.on("UpdateItem", function (item) {
+            console.log("Runs")
+            console.log(item)
+            vm.item = item;
+        });
 
-        vm.task = "content";
-        vm.currentTask = "Converting content";
-        vm.item2 = "";
-
-        $http({
-            method: "POST",
-            url: "/umbraco/backoffice/api/AutoBlockListApi/TransferContent",
-            data: {
-                contentId: $scope.model.content.id,
-            }
-        }).then(function (convertContentResponse) {
-
-            vm.report = vm.report.concat(convertContentResponse.data);
-
-            vm.task = "";
-            vm.currentTask = "";
-            vm.percentage = 100;   
-
+        connection.on("Done", function (item) {
             vm.showReport = true;
-            $scope.model.disableSubmitButton = false;
         });
-    }
+    });
 });

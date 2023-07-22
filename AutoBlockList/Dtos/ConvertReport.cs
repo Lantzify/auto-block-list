@@ -1,10 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using static AutoBlockList.Constants.AutoBlockListConstants;
 
 namespace AutoBlockList.Dtos
@@ -19,8 +13,5 @@ namespace AutoBlockList.Dtos
 
         [DataMember]
         public string? ErrorMessage { get; set; }
-
-        [DataMember]
-        public object? Item { get; set; }
     }
 }

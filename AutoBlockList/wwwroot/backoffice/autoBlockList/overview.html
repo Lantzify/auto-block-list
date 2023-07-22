@@ -34,7 +34,7 @@
                                     <umb-button action="vm.convertContent()"
                                                 type="button"
                                                 button-style="info"
-                                                label="Convert ({{vm.selectedContent.length}}) nodes"
+                                                label="Convert"
                                                 disabled="vm.selectedContent.length == 0">
                                     </umb-button>
                                 </div>
@@ -50,8 +50,8 @@
                                                     <i class="icon-check umb-checkmark umb-checkmark--xs umb-outline" checked="checked" size="xs"></i>
                                                 </button>
                                             </div>
-                                            <div class="umb-table-cell umb-table__name not-fixed"><localize key="general_name">Name</localize></div>
-                                            <div class="umb-table-cell umb-table-cell--nano"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                            <div class="umb-table-cell umb-table__name"><localize key="general_name">Name</localize></div>
+                                            <div class="umb-table-cell umb-table-cell--nano">Converted</div>
                                             <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
                                         </div>
                                     </div>
@@ -61,6 +61,7 @@
                                                 <umb-icon icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
                                             <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
+                                            <div class="umb-table-cell umb-table-cell--nano"><umb-icon icon="icon-check color-green" class="umb-table-body__icon" ng-if="page.hasBLAssociated"></umb-icon></div>
                                             <div class="umb-table-cell">
                                                 <umb-button ng-click="$event.stopPropagation();"
                                                             action="vm.openContent(page.id)"

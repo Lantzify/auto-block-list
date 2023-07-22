@@ -15,6 +15,6 @@ namespace AutoBlockList.Dtos
 		public bool HasBLAssociated { get; set; }
 
 		[DataMember]
-        public ISimpleContentType? ContentType { get; set; }
+		public Guid ContentTypeKey { get; set; }
     }
 }

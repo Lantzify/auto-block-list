@@ -12,8 +12,5 @@ namespace AutoBlockList.Dtos
 
         [DataMember]
         public string? Name { get; set; }
-
-        [DataMember]
-        public int? MatchingBLId { get; set; }
     }
 }

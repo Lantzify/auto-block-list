@@ -7,6 +7,7 @@ using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
 using Microsoft.Extensions.Options;
+using AutoBlockList.Dtos.BlockList;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
@@ -92,8 +93,7 @@ namespace AutoBlockList.Services
                 {
                     Id = dataType.Id,
                     Name = dataType.Name,
-                    Icon = dataType.Editor?.Icon,
-                    MatchingBLId = _dataTypeService.GetDataType(string.Format(GetNameFormatting(), dataType.Name))?.Id
+                    Icon = dataType.Editor?.Icon
                 });
 
             return dataTypes;
@@ -232,9 +232,9 @@ namespace AutoBlockList.Services
             return dataTypes;
         }
 
-        public IEnumerable<CustomContentTypeReferences> GetElementContentTypesFromDataType(IDataType dataType)
+        public IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType)
         {
-            var contentTypeReferences = new List<CustomContentTypeReferences>();
+            var contentTypes = new List<IContentType>();
 
             var usages = _dataTypeService.GetReferences(dataType.Id);
 
@@ -243,45 +243,11 @@ namespace AutoBlockList.Services
                 var contentType = _contentTypeService.Get(((GuidUdi)entityType.Key).Guid);
 
                 if (contentType != null && contentType.IsElement)
-                    contentTypeReferences.Add(new CustomContentTypeReferences()
-                    {
-                        Id = contentType.Id,
-                        Key = contentType.Key,
-                        Alias = contentType.Alias,
-                        Icon = contentType.Icon,
-                        Name = contentType.Name,
-                        IsElement = contentType.IsElement
-                    });
+                    contentTypes.Add(contentType);
             }
 
-            return contentTypeReferences;
+            return contentTypes;
         }
 
-		public bool HasBLAssociated(IContent content)
-		{
-			var ncs = content.GetPropertiesByEditor(PropertyEditors.Aliases.NestedContent);
-            var bls = content.GetPropertiesByEditor(PropertyEditors.Aliases.BlockList);
-            var boolList = new List<bool>();
-
-
-            if (ncs.Count() != bls.Count())
-                return false;
-
-            foreach (var nc in ncs)
-            {
-                var foo = content.GetValue(nc.Alias);
-                var bar = content.GetValue(string.Format(GetAliasFormatting(), nc.Alias));
-
-                if(foo == null && bar == null)
-                    boolList.Add(true);
-
-				if (foo != null && bar != null)
-					boolList.Add(true);
-
-			}
-
-
-            return false;
-		}
 	}
 }

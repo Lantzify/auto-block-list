@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace AutoBlockList.Dtos
+namespace AutoBlockList.Dtos.BlockList
 {
     public class BlockList
     {
