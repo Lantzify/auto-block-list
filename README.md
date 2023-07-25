@@ -34,3 +34,5 @@ If you find any issues with the package feel free to raise a issue!
 ![Dashboard](assets/dashboard.PNG "Dashboard")
 ![Select](assets/select.PNG "Select")
 ![Usure](assets/usure.PNG "Usure")
+![Result](assets/result.PNG "Result")
+![Done](assets/done.PNG "Done")

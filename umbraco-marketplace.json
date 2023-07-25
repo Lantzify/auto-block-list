@@ -19,6 +19,29 @@
         "UmbracoNaviHideIcon"
     ],
     "Screenshots": [
-
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/demo.gif",
+            "Caption": "Short demo"
+        },
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/dashboard.PNG",
+            "Caption": "Dashboard"
+        },
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/select.PNG",
+            "Caption": "Select"
+        },
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/usure.PNG",
+            "Caption": "Confirm"
+        },
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/result.PNG",
+            "Caption": "Result"
+        },
+        {
+            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/done.PNG",
+            "Caption": "Done"
+        }
     ]
 }
