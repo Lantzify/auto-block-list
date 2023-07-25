@@ -100,9 +100,11 @@ namespace AutoBlockList.Controllers
 
                 return contentTypes != null && contentTypes.Any() ? contentTypes : null;
             });
+            var contentTypesIds = contentTypes.Select(x => x.Id).ToList();
+            contentTypesIds.AddRange(_autoBlockListService.GetComposedOf(contentTypesIds));
 
             var filter = new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed);
-            var items = _contentService.GetPagedOfTypes(_autoBlockListService.GetComposedOf(contentTypes?.Select(x => x.Id)).ToArray(), page, 50, out long totalRecords, filter, null);      
+            var items = _contentService.GetPagedOfTypes(contentTypesIds.ToArray(), page, 50, out long totalRecords, filter, null);      
             var result = new PagedResult<DisplayAutoBlockListContent>(totalRecords, page, 50);
             result.Items = items.Select(x => new DisplayAutoBlockListContent()
             {
@@ -175,8 +177,9 @@ namespace AutoBlockList.Controllers
 
             try
             {
+
                 var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
-                var isComposition = contentType.CompositionPropertyTypes.Any();
+                var isComposition = contentType.CompositionIds().Any();
                 
                 propertyType = isComposition ? contentType.CompositionPropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id) : propertyType;
                
@@ -203,19 +206,22 @@ namespace AutoBlockList.Controllers
                             }
 
                             compositionContentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
-                            compositionContentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
+                                    compositionContentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
                             _contentTypeService.Save(compositionContentType);
+                            convertReport.Status = AutoBlockListConstants.Status.Success;
+
                         }
                     }
                 }
-                else
+
+                if(contentType.PropertyTypeExists(propertyType.Alias))
                 {
                     contentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
-                    contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
+                                                contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
                     _contentTypeService.Save(contentType);
+                    convertReport.Status = AutoBlockListConstants.Status.Success;
                 }
-               
-                convertReport.Status = AutoBlockListConstants.Status.Success;
+
             }
             catch (Exception ex)
             {
