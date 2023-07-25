@@ -1,5 +1,5 @@
 # Auto block list
-![version](https://img.shields.io/nuget/v/AutoBlockList?label=version)
+![Version](https://img.shields.io/nuget/v/AutoBlockList?label=version)
 [![Nuget](https://img.shields.io/nuget/dt/AutoBlockList?color=2346c018&logo=Nuget)](https://www.nuget.org/packages/AutoBlockList/)
 
 Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format.
