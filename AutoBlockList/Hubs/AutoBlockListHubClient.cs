@@ -15,65 +15,56 @@ namespace AutoBlockList.Hubs
 			_connectionId = connectionId;
 		}
 
-		public void AddReport<TObject>(TObject item)
+        private void Send<TObject>(string method, TObject item)
+        {
+            if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
+                return;
+
+            var client = _hubContext.Clients.Client(_connectionId);
+            if (client != null)
+            {
+                client.SendAsync(method, item).Wait();
+                return;
+            }
+
+            _hubContext.Clients.All.SendAsync(method, item).Wait();
+        }
+
+        public void AddReport<TObject>(TObject item)
 		{
-			if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
-				return;
-
-			var client = _hubContext.Clients.Client(_connectionId);
-			if (client != null)
-			{
-				client.SendAsync("AddReport", item);
-				return;
-			}
-
-			_hubContext.Clients.All.SendAsync("AddReport", item);
+			Send("AddReport", item);
 		}
 
-		public void UpdateTask<TObject>(TObject item)
+        public void CurrentTask<TObject>(TObject item)
+        {
+            Send("CurrentTask", item);
+        }
+
+        public void UpdateStep<TObject>(TObject item)
 		{
-			if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
-				return;
-
-			var client = _hubContext.Clients.Client(_connectionId);
-			if (client != null)
-			{
-				client.SendAsync("UpdateTask", item).Wait();
-				return;
-			}
-
-			_hubContext.Clients.All.SendAsync("UpdateTask", item).Wait();
+            Send("UpdateStep", item);
 		}
 
 
 		public void UpdateItem<TObject>(TObject item)
 		{
-			if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
-				return;
-
-			var client = _hubContext.Clients.Client(_connectionId);
-			if (client != null)
-			{
-				client.SendAsync("UpdateItem", item).Wait();
-				return;
-			}
-
-			_hubContext.Clients.All.SendAsync("UpdateItem", item).Wait();
+            Send("UpdateItem", item);
 		}
 
-		public void Done()
+        public void SetTitle<TObject>(TObject item)
+        {
+            Send("SetTitle", item);
+        }
+
+        public void SetSubTitle<TObject>(TObject item)
+        {
+            Send("SetSubTitle", item);
+        }
+
+
+        public void Done<TObject>(TObject item)
 		{
-			if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
-				return;
-
-			var client = _hubContext.Clients.Client(_connectionId);
-			if (client != null)
-			{
-				client.SendAsync("Done").Wait();
-				return;
-			}
-
-			_hubContext.Clients.All.SendAsync("Done").Wait();
+            Send("Done", item);
 		}
 	}
 }

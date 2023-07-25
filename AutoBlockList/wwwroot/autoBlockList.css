@@ -1,10 +1,5 @@
-.autoBlockList .umb-progress-bar__progress {
-    transition: all 1s;
-}
-
-
-.autoBlockList .umb-progress-bar umb-progress-bar--s {
-    transition: all 1s;
+.hideClose div[data-element="button-overlayClose"] {
+    display: none;
 }
 
 .autoBlockList.overlay .umb-table__name {

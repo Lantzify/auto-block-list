@@ -8,6 +8,6 @@
         public string? Icon { get; set; }
         public string? Name { get; set; }
         public bool IsElement { get; set; }
-
+        public bool HasBL { get; set; }
     }
 }

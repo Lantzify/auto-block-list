@@ -1,7 +1,9 @@
-﻿using Umbraco.Cms.Core;
+﻿using System.Linq;
+using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
 using AutoBlockList.Hubs;
+using Newtonsoft.Json.Linq;
 using AutoBlockList.Services;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models;
@@ -12,6 +14,7 @@ using Umbraco.Cms.Core.Services;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.SignalR;
+using System.Text.RegularExpressions;
 using static Umbraco.Cms.Core.Constants;
 using Umbraco.Cms.Web.Common.Attributes;
 using Umbraco.Cms.Web.Common.Controllers;
@@ -19,6 +22,7 @@ using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.Cms.Core.Models.ContentEditing;
+using static Umbraco.Cms.Core.Constants.Conventions;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 
 namespace AutoBlockList.Controllers
@@ -28,26 +32,23 @@ namespace AutoBlockList.Controllers
     public class AutoBlockListApiController : UmbracoApiController
     {
         private const string _checkLogs = "Check logs for futher details";
-		private AutoBlockListHubClient _client;
-		private readonly IScopeProvider _scopeProvider;
-		private readonly IAppPolicyCache _runtimeCache;
-		private readonly IContentService _contentService;
+        private AutoBlockListHubClient _client;
+        private readonly IScopeProvider _scopeProvider;
+        private readonly IAppPolicyCache _runtimeCache;
+        private readonly IContentService _contentService;
         private readonly IDataTypeService _dataTypeService;
         private readonly ILogger<AutoBlockListApiController> _logger;
         private readonly IContentTypeService _contentTypeService;
-		private readonly IHubContext<AutoBlockListHub> _hubContext;
-		private readonly ILocalizationService _localizationService;
+        private readonly IHubContext<AutoBlockListHub> _hubContext;
         private readonly IAutoBlockListService _autoBlockListService;
 
         public AutoBlockListApiController(IScopeProvider scopeProvider,
-			AppCaches appCaches,
-			IContentService contentService,
+            AppCaches appCaches,
+            IContentService contentService,
             IDataTypeService dataTypeService,
             ILogger<AutoBlockListApiController> logger,
             IContentTypeService contentTypeService,
-			IHubContext<AutoBlockListHub> hubContext,
-
-			 ILocalizationService localizationService,
+            IHubContext<AutoBlockListHub> hubContext,
             IAutoBlockListService autoBlockListService)
         {
             _logger = logger;
@@ -57,7 +58,6 @@ namespace AutoBlockList.Controllers
             _dataTypeService = dataTypeService;
             _contentTypeService = contentTypeService;
             _hubContext = hubContext;
-            _localizationService = localizationService;
             _autoBlockListService = autoBlockListService;
         }
 
@@ -94,16 +94,15 @@ namespace AutoBlockList.Controllers
         [HttpGet]
         public PagedResult<DisplayAutoBlockListContent> GetAllContentWithNC(int page)
         {
-            var contentTypeIds = _runtimeCache.GetCacheItem("AutoBlockListContentTypes", () =>
+            var contentTypes = _runtimeCache.GetCacheItem(AutoBlockListConstants.CacheKey, () =>
             {
                 var contentTypes = GetAllNCContentTypes();
 
-				return contentTypes != null && contentTypes.Any() ? contentTypes : null;
-			})?.Select(x => x.Id).ToArray();
-          
-			var filter = new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed);
-			var items = _contentService.GetPagedOfTypes(contentTypeIds, page, 50, out long totalRecords, filter, null);
+                return contentTypes != null && contentTypes.Any() ? contentTypes : null;
+            });
 
+            var filter = new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed);
+            var items = _contentService.GetPagedOfTypes(_autoBlockListService.GetComposedOf(contentTypes?.Select(x => x.Id)).ToArray(), page, 50, out long totalRecords, filter, null);      
             var result = new PagedResult<DisplayAutoBlockListContent>(totalRecords, page, 50);
             result.Items = items.Select(x => new DisplayAutoBlockListContent()
             {
@@ -111,17 +110,16 @@ namespace AutoBlockList.Controllers
                 ContentTypeKey = x.ContentType.Key,
                 Name = x.Name,
                 Id = x.Id,
-                HasBLAssociated = false
+                HasBLAssociated = _autoBlockListService.HasBLContent(x)
             });
 
             return result;
         }
 
-
         //Converting
-        private IDataType ConvertNCDataType(int id)
+        private ConvertReport ConvertNCDataType(int id)
         {
-			var convertReport = new ConvertReport()
+            var convertReport = new ConvertReport()
             {
                 Task = string.Format("Converting NC data type with id {0} to Block list", id),
             };
@@ -141,16 +139,16 @@ namespace AutoBlockList.Controllers
                     _dataTypeService.Save(blDataType);
 
                     convertReport.Status = AutoBlockListConstants.Status.Success;
-                   
+
                     _client.AddReport(convertReport);
-                    return blDataType;
+                    return convertReport;
                 }
 
                 convertReport.Status = AutoBlockListConstants.Status.Skipped;
 
-				_client.AddReport(convertReport);
+                _client.AddReport(convertReport);
 
-				return existingDataType;
+                return convertReport;
             }
             catch (Exception ex)
             {
@@ -159,35 +157,64 @@ namespace AutoBlockList.Controllers
                 convertReport.ErrorMessage = _checkLogs;
                 convertReport.Status = AutoBlockListConstants.Status.Failed;
 
-                return null;
+                return convertReport;
             }
         }
 
         [HttpPost]
-        public ConvertReport AddDataTypeToContentType(IContentType contentType, IDataType blDataType, IDataType ncDataType)
+        public ConvertReport AddDataTypeToContentType(IContentType contentType, IDataType ncDataType)
         {
-			var convertReport = new ConvertReport()
-			{
-				Task = string.Format("Adding data type '{0}' to document type '{1}'", blDataType.Name, contentType.Name),
-				Status = AutoBlockListConstants.Status.Failed
-			};
-
-			_client.UpdateItem(convertReport.Task);
-
-			try
+            var blDataType = _dataTypeService.GetDataType(string.Format(_autoBlockListService.GetNameFormatting(), ncDataType.Name));
+            var convertReport = new ConvertReport()
             {
-				var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
-				if (contentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
+                Task = string.Format("Adding data type '{0}' to document type '{1}'", blDataType.Name, contentType.Name),
+                Status = AutoBlockListConstants.Status.Failed
+            };
+
+            _client.UpdateItem(convertReport.Task);
+
+            try
+            {
+                var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
+                var isComposition = contentType.CompositionPropertyTypes.Any();
+                
+                propertyType = isComposition ? contentType.CompositionPropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id) : propertyType;
+               
+                if (contentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
                 {
                     convertReport.Status = AutoBlockListConstants.Status.Skipped;
                     _client.AddReport(convertReport);
                     return convertReport;
                 }
 
-                contentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
-                contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
-                _contentTypeService.Save(contentType);
+                if (isComposition)
+                {
+                    var compositionContentTypeIds = contentType.CompositionIds();
+                    foreach (var compositionContentTypeId in compositionContentTypeIds)
+                    {
+                        var compositionContentType = _contentTypeService.Get(compositionContentTypeId);
+                        if (compositionContentType != null && compositionContentType.PropertyTypeExists(propertyType.Alias))
+                        {
+                            if (compositionContentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
+                            {
+                                convertReport.Status = AutoBlockListConstants.Status.Skipped;
+                                _client.AddReport(convertReport);
+                                return convertReport;
+                            }
 
+                            compositionContentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
+                            compositionContentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
+                            _contentTypeService.Save(compositionContentType);
+                        }
+                    }
+                }
+                else
+                {
+                    contentType.AddPropertyType(_autoBlockListService.MapPropertyType(propertyType, ncDataType, blDataType),
+                    contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
+                    _contentTypeService.Save(contentType);
+                }
+               
                 convertReport.Status = AutoBlockListConstants.Status.Success;
             }
             catch (Exception ex)
@@ -214,31 +241,37 @@ namespace AutoBlockList.Controllers
                     Status = AutoBlockListConstants.Status.Failed
                 };
 
-				_client.AddReport(convertReport);
-
-				return;
+                _client.AddReport(convertReport);
             }
 
-            var allNCProperties = node.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent);
+            var allNCProperties = node.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent); ;
 
             foreach (var ncProperty in allNCProperties)
             {
                 if (ncProperty.PropertyType.VariesByCulture())
                 {
-                    foreach (var culture in _localizationService.GetAllLanguages())
+                    foreach (var culture in node.AvailableCultures)
                     {
                         var report = new ConvertReport()
                         {
-                            Task = string.Format("Converting '{0}' for culture '{1}' to block list content", ncProperty.PropertyType.Name, culture.CultureName),
+                            Task = string.Format("Converting '{0}' for culture '{1}' to block list content", ncProperty.PropertyType.Name, culture),
                             Status = AutoBlockListConstants.Status.Failed
                         };
 
-						_client.UpdateItem(report.Task);
+                        _client.UpdateItem(report.Task);
 
-						try
+                        try
                         {
-                            node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), _autoBlockListService.TransferContent(ncProperty, culture.IsoCode), culture.IsoCode);
-                            report.Status = AutoBlockListConstants.Status.Success;
+                            var value = _autoBlockListService.TransferContent(ncProperty, culture);
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), value, culture);
+                                report.Status = AutoBlockListConstants.Status.Success;
+                            }
+                            else
+                            {
+                                report.Status = AutoBlockListConstants.Status.Skipped;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -246,7 +279,7 @@ namespace AutoBlockList.Controllers
                             report.ErrorMessage = _checkLogs;
                         }
 
-						_client.AddReport(report);
+                        _client.AddReport(report);
                     }
                 }
                 else
@@ -257,12 +290,20 @@ namespace AutoBlockList.Controllers
                         Status = AutoBlockListConstants.Status.Failed
                     };
 
-					_client.UpdateItem(report.Task);
+                    _client.UpdateItem(report.Task);
 
-					try
+                    try
                     {
-                        node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), _autoBlockListService.TransferContent(ncProperty));
-                        report.Status = AutoBlockListConstants.Status.Success;
+                        var value = _autoBlockListService.TransferContent(ncProperty);
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            node.SetValue(string.Format(_autoBlockListService.GetAliasFormatting(), ncProperty.Alias), value);
+                            report.Status = AutoBlockListConstants.Status.Success;
+                        }
+                        else
+                        {
+                            report.Status = AutoBlockListConstants.Status.Skipped;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -274,58 +315,93 @@ namespace AutoBlockList.Controllers
                 }
             }
 
-            _contentService.Save(node);
+            if (_autoBlockListService.GetSaveAndPublishSetting())
+            {
+                _contentService.SaveAndPublish(node);
+            }
+            else
+            {
+                _contentService.Save(node);
+            }
         }
 
         [HttpPost]
-        public void Convert(ConvertDto dto)
+        public IActionResult Convert(ConvertDto dto)
         {
-			_client = new AutoBlockListHubClient(_hubContext, dto.ConnectionId);
-
-            foreach (var content in dto.Contents)
+            try
             {
-				_client.UpdateTask("dataTypes");
+                _client = new AutoBlockListHubClient(_hubContext, dto.ConnectionId);
 
-                var fullContentType = _contentTypeService.Get(content.ContentTypeKey);
-                var ncDataTypes = _dataTypeService.GetAll(_autoBlockListService.GetDataTypesInContentType(fullContentType).Select(x => x.Id).ToArray()).ToArray();
-
-                var blDataTypes = new List<IDataType>();
-
-                foreach (var dataType in ncDataTypes)
+                foreach (var content in dto.Contents)
                 {
-                    var blDataType = ConvertNCDataType(dataType.Id);
-                    if (blDataType.Name != null)
+                    var index = dto.Contents.FindIndex(x => x == content);
+
+                    _client.CurrentTask("Converting data types");
+                    _client.SetTitle(content.Name);
+                    _client.SetSubTitle(index);
+                    _client.UpdateStep("dataTypes");
+
+                    var fullContentType = _contentTypeService.Get(content.ContentTypeKey);
+
+                    var ncDataTypes = _autoBlockListService.GetDataTypesInContentType(fullContentType).ToArray();
+
+                    foreach (var dataType in ncDataTypes)
                     {
-                        blDataTypes.Add(blDataType);
-                    }
-                }
-
-                if (blDataTypes != null && blDataTypes.Any())
-                {
-                    _client.UpdateTask("contentTypes");
-
-					var contentTypes = new List<IContentType>
-					{
-						fullContentType
-					};
-
-
-                    //FIX THIS FOR NESTLING
-					//contentTypes.AddRange(_autoBlockListService.GetElementContentTypesFromDataType(1));
-
-                    for (int i = 0; i < ncDataTypes.Count(); i++)
-                    {
-
-						AddDataTypeToContentType(fullContentType, blDataTypes[i], ncDataTypes[i]);
+                        var convertReport = ConvertNCDataType(dataType.Id);
+                        if (convertReport.Status == AutoBlockListConstants.Status.Failed)
+                        {
+                            _client.Done(index);
+                            return ValidationProblem();
+                        }
                     }
 
-                    _client.UpdateTask("content");
+                    _client.CurrentTask("Adding data type to document type");
+                    _client.UpdateStep("contentTypes");
+
+                    foreach (var dataType in ncDataTypes)
+                    {
+                        var hasNcDataType = fullContentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == dataType.Id);
+                        hasNcDataType = hasNcDataType == null ? fullContentType.CompositionPropertyTypes.FirstOrDefault(x => x.DataTypeId == dataType.Id) : hasNcDataType;
+
+                        if (hasNcDataType != null)
+                        {
+                            var convertReport = AddDataTypeToContentType(fullContentType, dataType);
+                            if (convertReport.Status == AutoBlockListConstants.Status.Failed)
+                            {
+                                _client.Done(index);
+                                return ValidationProblem();
+                            }
+                        }
+                        else
+                        {
+                            var contentTypes = _autoBlockListService.GetElementContentTypesFromDataType(dataType);
+                            foreach (var contentType in contentTypes)
+                            {
+                                var convertReport = AddDataTypeToContentType(contentType, dataType);
+                                if (convertReport.Status == AutoBlockListConstants.Status.Failed)
+                                {
+                                    _client.Done(index);
+                                    return ValidationProblem();
+                                }
+                            }
+                        }
+                    }
+
+                    _client.CurrentTask("Converting content");
+                    _client.UpdateStep("content");
                     TransferContent(content.Id);
 
-
-                    _client.Done()
+                    _client.Done(index + 1);
                 }
+
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to convert");
+                return ValidationProblem(ex.Message);
+            }
+
+            return Ok();
         }
     }
 }

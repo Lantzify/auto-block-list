@@ -1,5 +1,6 @@
 angular.module("umbraco").controller("autoBlockList.overview.controller", function (
     $http,
+    $route,
     editorService,
     overlayService) {
 
@@ -10,6 +11,8 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     var appSettings = {
         AutoBlockList: {
+            BlockListEditorSize: "medium",
+            SaveAndPublish: true,
             NameFormatting: "[Block list] - {0}",
             AliasFormatting: "{0}BL"
         }
@@ -81,10 +84,9 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                     submitButtonLabel: "Confirm",
                     closeButtonLabel: "Close",
                     submit: function (model) {
+                        $route.reload();
                         overlayService.close();
-                    },
-                    close: function () {
-                        overlayService.close();
+                        document.body.classList.remove("hideClose");
                     }
                 };
 

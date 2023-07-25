@@ -2,6 +2,7 @@
 {
     public static class AutoBlockListConstants
     {
+        public const string CacheKey = "AutoBlockListContentTypes";
         public static readonly string[] DefaultNC = {
             "name",
             "ncContentTypeAlias",

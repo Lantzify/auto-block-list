@@ -17,6 +17,7 @@
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
+                  
                             <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedContent.length">
                                 <div>
                                     <umb-button action="vm.clearSelection()"
@@ -35,6 +36,7 @@
                                                 type="button"
                                                 button-style="info"
                                                 label="Convert"
+                                                icon="icon-axis-rotation"
                                                 disabled="vm.selectedContent.length == 0">
                                     </umb-button>
                                 </div>
@@ -51,7 +53,7 @@
                                                 </button>
                                             </div>
                                             <div class="umb-table-cell umb-table__name"><localize key="general_name">Name</localize></div>
-                                            <div class="umb-table-cell umb-table-cell--nano">Converted</div>
+                                            <div class="umb-table-cell">Converted</div>
                                             <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
                                         </div>
                                     </div>
@@ -61,7 +63,7 @@
                                                 <umb-icon icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
                                             <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
-                                            <div class="umb-table-cell umb-table-cell--nano"><umb-icon icon="icon-check color-green" class="umb-table-body__icon" ng-if="page.hasBLAssociated"></umb-icon></div>
+                                            <div class="umb-table-cell"><umb-icon icon="icon-check color-green" class="umb-table-body__icon" style="margin:0;" ng-if="page.hasBLAssociated"></umb-icon></div>
                                             <div class="umb-table-cell">
                                                 <umb-button ng-click="$event.stopPropagation();"
                                                             action="vm.openContent(page.id)"
@@ -93,6 +95,16 @@
                         <umb-box-header title="Settings"></umb-box-header>
                         <umb-box-content>
                             <umb-code-snippet class="db mb4" language="'json'">{{vm.appSettings}}</umb-code-snippet>
+                            <p class="mb0">
+                                <strong>BlockListEditorSize</strong>
+                            </p>
+                            <p>Size of the block list editor. (Case sensitive) Sizes: small, medium, large.</p>
+
+                            <p class="mb0">
+                                <strong>SaveAndPublish</strong>
+                            </p>
+                            <p>If node should be saved and published or only saved.</p>
+
                             <p class="mb0">
                                 <strong>NameFormatting</strong>
                             </p>

@@ -2,6 +2,8 @@
 using AutoBlockList.Services;
 using AutoBlockList.Backoffice;
 using Umbraco.Cms.Core.Composing;
+using AutoBlockList.Notifications;
+using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ namespace AutoBlockList.Composers
         public void Compose(IUmbracoBuilder builder)
         {
             builder.ManifestFilters().Append<AutoBlockListManifestFilter>();
+
+            builder.AddNotificationHandler<ContentTypeChangedNotification, ClearCacheHandler>();
 
             builder.Services.AddSingleton<IAutoBlockListService, AutoBlockListService>();
 

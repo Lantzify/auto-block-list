@@ -34,7 +34,7 @@ namespace AutoBlockList.Backoffice
             var root = rootResult.Value;
 
             root.RoutePath = string.Format("{0}/{1}/{2}", Applications.Settings, "autoBlockList", "overview");
-            root.Icon = "icon-sience";
+            root.Icon = "icon-axis-rotation";
             root.HasChildren = false;
             root.MenuUrl = null;
 

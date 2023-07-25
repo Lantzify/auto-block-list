@@ -5,13 +5,18 @@ namespace AutoBlockList.Services
 {
     public interface IAutoBlockListService
     {
-        IEnumerable<CustomDisplayDataType> GetDataTypesInContentType(IContentType contentType);
+        IEnumerable<IDataType> GetDataTypesInContentType(IContentType contentType);
         string TransferContent(IProperty property, string? culture = null);
         string GetNameFormatting();
         string GetAliasFormatting();
+        bool GetSaveAndPublishSetting();
+        string GetBlockListEditorSize();
         IDataType? CreateBLDataType(IDataType ncDataType);
         PropertyType? MapPropertyType(IPropertyType propertyType, IDataType ncDataType, IDataType blDataType);
         IEnumerable<CustomDisplayDataType> GetAllNCDataTypes();
         IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType);
+        bool HasBLContent(IContent item);
+        IEnumerable<IPropertyType> GetPropertyTypes(IContentType contentType);
+        IEnumerable<int> GetComposedOf(IEnumerable<int> ids);
     }
 }

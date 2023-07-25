@@ -2,6 +2,7 @@
 using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
+using Umbraco.Extensions;
 using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Strings;
@@ -12,7 +13,6 @@ using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
 using DataType = Umbraco.Cms.Core.Models.DataType;
-using static Umbraco.Cms.Core.Constants.HttpContext;
 using static Umbraco.Cms.Core.PropertyEditors.BlockListConfiguration;
 
 namespace AutoBlockList.Services
@@ -46,7 +46,8 @@ namespace AutoBlockList.Services
 
         public string GetNameFormatting() => _dataBlockConverterSettings.Value.NameFormatting;
         public string GetAliasFormatting() => _dataBlockConverterSettings.Value.AliasFormatting;
-
+        public bool GetSaveAndPublishSetting() => _dataBlockConverterSettings.Value.SaveAndPublish;
+        public string GetBlockListEditorSize() => _dataBlockConverterSettings.Value.BlockListEditorSize;
 
         public IDataType? CreateBLDataType(IDataType ncDataType)
         {
@@ -75,7 +76,7 @@ namespace AutoBlockList.Services
                 blocks.Add(new BlockConfiguration()
                 {
                     Label = ncContentType.Template,
-                    EditorSize = "Medium",
+                    EditorSize = GetBlockListEditorSize(),
                     ContentElementTypeKey = _contentTypeService.Get(ncContentType.Alias).Key
                 });
             }
@@ -101,10 +102,17 @@ namespace AutoBlockList.Services
 
         public string TransferContent(IProperty property, string? culture = null)
         {
-            var ncValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(property.GetValue(culture).ToString());
+            var value = property.GetValue(culture);
+            if (value == null)
+                return string.Empty;
+
+            var ncValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(value.ToString());
 
             var contentData = ConvertNCDataToBLData(ncValues);
             var contentUdiList = new List<Dictionary<string, string>>();
+
+            if (contentData == null)
+                return string.Empty;
 
             foreach (var content in contentData)
             {
@@ -133,8 +141,9 @@ namespace AutoBlockList.Services
 
             foreach (var ncValue in ncValues)
             {
-                var rawContentType = ncValue.FirstOrDefault(x => x.Key == "ncContentTypeAlias");
-                var contentType = _contentTypeService.GetAllElementTypes().FirstOrDefault(x => x.Alias == rawContentType.Value);
+                var rawContentType = ncValue.FirstOrDefault(x => x.Key == "ncContentTypeAlias").Value;
+                
+                var contentType = _contentTypeService.GetAllElementTypes().FirstOrDefault(x => x.Alias == rawContentType);
                 var contentUdi = new GuidUdi("element", Guid.NewGuid()).ToString();
                 var values = ncValue.Where(x => !AutoBlockListConstants.DefaultNC.Contains(x.Key));
 
@@ -155,25 +164,27 @@ namespace AutoBlockList.Services
                             var nestedContentData = ConvertNCDataToBLData(nsedtedNCValues);
                             var contentUdiList = new List<Dictionary<string, string>>();
 
-                            foreach (var nestedContent in nestedContentData)
-                            {
-                                contentUdiList.Add(new Dictionary<string, string>
+                            if (nestedContentData == null)
+                                return null;
+                     
+                                foreach (var nestedContent in nestedContentData)
+                                {
+                                    contentUdiList.Add(new Dictionary<string, string>
                                 {
                                     {"contentUdi", nestedContent["udi"] },
                                 });
-                            }
+                                }
+                                var blockList = new BlockList()
+                                {
+                                    layout = new BlockListUdi(contentUdiList, new List<Dictionary<string, string>>()),
+                                    contentData = nestedContentData,
+                                    settingsData = new List<Dictionary<string, string>>()
+                                };
 
-                            var blockList = new BlockList()
-                            {
-                                layout = new BlockListUdi(contentUdiList, new List<Dictionary<string, string>>()),
-                                contentData = nestedContentData,
-                                settingsData = new List<Dictionary<string, string>>()
-                            };
-
-                            content.Add(string.Format(GetAliasFormatting(), value.Key), JsonConvert.SerializeObject(blockList));
+                                content.Add(string.Format(GetAliasFormatting(), value.Key), JsonConvert.SerializeObject(blockList));
                         }
                     }
-                    catch
+                    catch(Exception ex)
                     {
                         content.Add(value.Key, value.Value);
                     }
@@ -210,26 +221,51 @@ namespace AutoBlockList.Services
             };
         }
 
-        public IEnumerable<CustomDisplayDataType> GetDataTypesInContentType(IContentType contentType)
+        public IEnumerable<IDataType> GetDataTypesInContentType(IContentType contentType)
         {
-            var dataTypes = new List<CustomDisplayDataType>();
+            var dataTypes = new List<IDataType>();
+            var propertyTypes = GetPropertyTypes(contentType);
 
-            foreach (var propertyType in contentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent))
+
+            foreach (var propertyType in propertyTypes)
             {
                 var dataType = _dataTypeService.GetDataType(propertyType.DataTypeId);
 
                 if (dataType != null)
                 {
-                    dataTypes.Add(new CustomDisplayDataType()
+                    dataTypes.Add(dataType);
+                    var ncConfig = dataType.Configuration as NestedContentConfiguration;
+                    foreach (var ncContentType in ncConfig.ContentTypes)
                     {
-                        Id = dataType.Id,
-                        Icon = dataType.Editor?.Icon,
-                        Name = dataType.Name,
-                    });
+                        var nestedContentType = _contentTypeService.Get(ncContentType.Alias);
+                        if (nestedContentType != null)
+                            dataTypes.AddRange(GetDataTypesInContentType(nestedContentType));   
+                    }
                 }
             }
 
             return dataTypes;
+        }
+
+        public IEnumerable<int> GetComposedOf(IEnumerable<int> ids)
+        {
+            var contentTypes = new List<int>();
+
+            foreach (int id in ids)
+                contentTypes.AddRange(_contentTypeService.GetComposedOf(id).Select(x => x.Id));
+
+            return contentTypes;
+        }
+
+        public IEnumerable<IPropertyType> GetPropertyTypes(IContentType contentType)
+        {
+            var propertyTypes = new List<IPropertyType>();
+            propertyTypes.AddRange(contentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent));
+
+            if (contentType.CompositionPropertyTypes.Any())
+                propertyTypes.AddRange(contentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent));
+
+            return propertyTypes;
         }
 
         public IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType)
@@ -249,5 +285,42 @@ namespace AutoBlockList.Services
             return contentTypes;
         }
 
-	}
+        public bool HasBLContent(IContent item)
+        {
+            var ok = new List<bool>();
+
+            var ncProperties = item.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent);
+
+            foreach (var property in ncProperties)
+            {
+                var blProperty = item.Properties.FirstOrDefault(x => x.Alias == string.Format(GetAliasFormatting(), property.Alias));
+                if (blProperty != null)
+                {
+                    if (property.PropertyType.VariesByCulture())
+                    {
+                        foreach (var language in item.AvailableCultures)
+                        {
+                            var ncValue = property.GetValue(language);
+                            var blValue = blProperty.GetValue(language);
+
+                            ok.Add(ncValue != null && blValue != null || ncValue == null && blValue == null);
+                        }
+                    }
+                    else
+                    {
+                        var ncValue = property.GetValue();
+                        var blValue = blProperty.GetValue();
+
+                        ok.Add(ncValue != null && blValue != null || ncValue == null && blValue == null);
+                    }
+                }
+                else
+                {
+                    ok.Add(false);
+                }
+            }
+
+            return ok.All(x => x);
+        }
+    }
 }
