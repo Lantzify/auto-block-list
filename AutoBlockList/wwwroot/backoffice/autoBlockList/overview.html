@@ -13,11 +13,22 @@
 
             <div class="umb-logviewer" ng-if="!vm.loading">
                 <div class="umb-logviewer__main-content" style="width: calc(100% - 425px);">
-                    <umb-box>
+
+                    <umb-box ng-if="!vm.loadingTable && vm.pagedContent.totalItems === 0">
+                        <umb-box-content>
+
+                            <umb-empty-state size="small">
+                                There is nothing to convert.
+                            </umb-empty-state>
+
+                        </umb-box-content>
+                    </umb-box>
+
+                    <umb-box ng-if="vm.pagedContent.totalItems > 0">
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
-                  
+
                             <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedContent.length">
                                 <div>
                                     <umb-button action="vm.clearSelection()"

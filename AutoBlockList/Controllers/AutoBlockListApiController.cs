@@ -100,6 +100,10 @@ namespace AutoBlockList.Controllers
 
                 return contentTypes != null && contentTypes.Any() ? contentTypes : null;
             });
+
+            if (contentTypes == null || !contentTypes.Any())
+                return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
+
             var contentTypesIds = contentTypes.Select(x => x.Id).ToList();
             contentTypesIds.AddRange(_autoBlockListService.GetComposedOf(contentTypesIds));
 
