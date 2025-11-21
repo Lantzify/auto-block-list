@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<StaticWebAssetBasePath>App_Plugins/AutoBlockList</StaticWebAssetBasePath>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.0.1" />
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.9.2" />
 	</ItemGroup>
 
 	<PropertyGroup>
 		<PackageId>AutoBlockList</PackageId>
-		<Version>1.0.0</Version>
+		<Version>2.0.0</Version>
 		<Title>Auto block list</Title>
 		<Authors>Lantzify</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
