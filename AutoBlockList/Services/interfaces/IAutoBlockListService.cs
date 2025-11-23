@@ -1,7 +1,7 @@
 ﻿using AutoBlockList.Dtos;
 using Umbraco.Cms.Core.Models;
 
-namespace AutoBlockList.Services
+namespace AutoBlockList.Services.interfaces
 {
     public interface IAutoBlockListService
     {
@@ -13,7 +13,7 @@ namespace AutoBlockList.Services
         string GetBlockListEditorSize();
         IDataType? CreateBLDataType(IDataType ncDataType);
         PropertyType? MapPropertyType(IPropertyType propertyType, IDataType ncDataType, IDataType blDataType);
-        IEnumerable<CustomDisplayDataType> GetAllNCDataTypes();
+        IEnumerable<CustomDisplayDataType> GetAllNCDataTypes(string alias);
         IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType);
         bool HasBLContent(IContent item);
         IEnumerable<IPropertyType> GetPropertyTypes(IContentType contentType);

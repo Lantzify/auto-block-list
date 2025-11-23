@@ -12,12 +12,12 @@
             <umb-load-indicator ng-if="vm.loading"></umb-load-indicator>
 
             <div class="umb-logviewer" ng-if="!vm.loading">
-                <div class="umb-logviewer__main-content" style="width: calc(100% - 425px);">
+                <div class="umb-logviewer__main-content" style="width: calc(100% - 582px);">
                     <umb-box>
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
-                  
+
                             <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedContent.length">
                                 <div>
                                     <umb-button action="vm.clearSelection()"
@@ -63,7 +63,7 @@
                                                 <umb-icon icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
                                             <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
-                                            <div class="umb-table-cell"><umb-icon icon="icon-check color-green" class="umb-table-body__icon" style="margin:0;" ng-if="page.hasBLAssociated"></umb-icon></div>
+                                            <div class="umb-table-cell"><umb-icon icon="{{page.hasBLAssociated ? 'icon-check color-green' : 'icon-alert-alt color-red'}}" class="umb-table-body__icon" style="margin:0;"></umb-icon></div>
                                             <div class="umb-table-cell">
                                                 <umb-button ng-click="$event.stopPropagation();"
                                                             action="vm.openContent(page.id)"
@@ -89,6 +89,92 @@
 
                         </umb-box-content>
                     </umb-box>
+
+                    <umb-box ng-if="vm.pagedContentWithMacros.length !== 0">
+                        <umb-box-header title="Macros" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
+
+                        <umb-box-content>
+
+                            <div class="umb-editor-sub-header umb-editor-sub-header-- --state-selection mt3" ng-if="vm.selectedMacroContent.length">
+                                <div>
+                                    <umb-button action="vm.clearSelection(true)"
+                                                class="mr2"
+                                                type="button"
+                                                button-style="info"
+                                                state="vm.buttonState"
+                                                label="Clear selection">
+                                    </umb-button>
+
+                                    {{vm.selectedMacroContent.length}} of {{vm.pagedContentWithMacros.totalItems}} selected
+                                </div>
+
+                                <div>
+                                    <umb-button action="vm.convertMacro()"
+                                                type="button"
+                                                button-style="info"
+                                                label="Convert"
+                                                icon="icon-axis-rotation"
+                                                disabled="vm.selectedMacroContent.length == 0">
+                                    </umb-button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <umb-load-indicator ng-if="vm.loadingMacroTable"></umb-load-indicator>
+
+                                <div class="umb-table" ng-if="!vm.loadingMacroTable">
+                                    <div class="umb-table-head">
+                                        <div class="umb-table-row">
+                                            <div class="umb-table-cell">
+                                                <button type="button" class="umb-table__action" ng-click="vm.toggleSelectAll(true)">
+                                                    <i class="icon-check umb-checkmark umb-checkmark--xs umb-outline" checked="checked" size="xs"></i>
+                                                </button>
+                                            </div>
+                                            <div class="umb-table-cell umb-table__name"><localize key="general_name">Name</localize></div>
+                                            <div class="umb-table-cell">Has macros</div>
+                                            <div class="umb-table-cell"><localize key="general_open" style="visibility:hidden;">Open</localize></div>
+                                        </div>
+                                    </div>
+                                    <div class="umb-table-body">
+                                        <div class="umb-table-row" ng-repeat="pageWithMacro in vm.pagedContentWithMacros.items" ng-click="vm.toggleSelectMacro(pageWithMacro)" ng-class="{'-selected' : vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1}">
+                                            <div class="umb-table-cell">
+                                                <umb-icon icon="{{vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1 ? 'icon-check' : pageWithMacro.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
+                                            </div>
+                                            <div class="umb-table-cell umb-table__name"><span>{{pageWithMacro.name}}</span></div>
+                                            <div class="umb-table-cell"><umb-icon icon="icon-alert-alt color-red" class="umb-table-body__icon" style="margin:0;"></umb-icon></div>
+                                            <div class="umb-table-cell">
+                                                <umb-button ng-click="$event.stopPropagation();"
+                                                            action="vm.openContent(pageWithMacro.id)"
+                                                            title="Open"
+                                                            type="button"
+                                                            button-style="link"
+                                                            state="vm.buttonState"
+                                                            label="Open">
+                                                </umb-button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                            <umb-pagination page-number="vm.pagedContentWithMacros.pageNumber"
+                                            total-pages="vm.pagedContentWithMacros.totalPages"
+                                            on-next="vm.nextMacroPage"
+                                            on-prev="vm.prevMacroPage"
+                                            on-go-to-page="vm.goToMacroPage">
+                            </umb-pagination>
+
+                        </umb-box-content>
+                    </umb-box>
+                    <umb-box ng-if="vm.pagedContentWithMacros.length === 0">
+                        <umb-box-content>
+                            <p class="mb0">
+                                <umb-icon icon="icon-check color-green"></umb-icon>
+                                No macros needing to be converted
+                            </p>
+                        </umb-box-content>
+                    </umb-box>
+
                 </div>
                 <div class="umb-logviewer__sidebar">
                     <umb-box>
@@ -114,6 +200,11 @@
                                 <strong>AliasFormatting</strong>
                             </p>
                             <p>Refers to the alias of the property that will be added to the document type.</p>
+
+                            <p class="mb0">
+                                <strong>FolderNameForContentTypes</strong>
+                            </p>
+                            <p>.</p>
                         </umb-box-content>
                     </umb-box>
                 </div>

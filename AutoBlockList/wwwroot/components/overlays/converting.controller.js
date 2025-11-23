@@ -22,7 +22,7 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         connection.start().then(function () {
             $http({
                 method: "POST",
-                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert",
+                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert" + $scope.model.convertType,
                 data: {
                     Contents: $scope.model.content,
                     ConnectionId: connection.connectionId

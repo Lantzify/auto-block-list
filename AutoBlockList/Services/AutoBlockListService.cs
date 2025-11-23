@@ -2,7 +2,6 @@
 using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 using AutoBlockList.Dtos;
-using Umbraco.Extensions;
 using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Strings;
@@ -12,6 +11,7 @@ using AutoBlockList.Dtos.BlockList;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
 using static Umbraco.Cms.Core.Constants;
+using AutoBlockList.Services.interfaces;
 using DataType = Umbraco.Cms.Core.Models.DataType;
 using static Umbraco.Cms.Core.PropertyEditors.BlockListConfiguration;
 
@@ -86,10 +86,10 @@ namespace AutoBlockList.Services
             return blDataType;
         }
 
-        public IEnumerable<CustomDisplayDataType> GetAllNCDataTypes()
+        public IEnumerable<CustomDisplayDataType> GetAllNCDataTypes(string alias)
         {
             var dataTypes = new List<CustomDisplayDataType>();
-            foreach (var dataType in _dataTypeService.GetAll().Where(x => x.EditorAlias == PropertyEditors.Aliases.NestedContent))
+            foreach (var dataType in _dataTypeService.GetAll().Where(x => x.EditorAlias == alias))
                 dataTypes.Add(new CustomDisplayDataType()
                 {
                     Id = dataType.Id,
