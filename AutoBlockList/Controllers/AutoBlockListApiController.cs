@@ -154,7 +154,7 @@ namespace AutoBlockList.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> ConvertMacro(ConvertDto dto)
+		public IActionResult ConvertMacro(ConvertDto dto)
 		{
 			try
 			{
@@ -172,11 +172,11 @@ namespace AutoBlockList.Controllers
 						Task = $"Converting macros on page: '{content.Name}'",
 					};
 
-					await _client.SetTitle(content.Name);
-					await _client.SetSubTitle(index);
-					await _client.CurrentTask(contentMacroReport.Task);
+					_client.SetTitle(content.Name);
+					_client.SetSubTitle(index);
+					_client.CurrentTask(contentMacroReport.Task);
 
-					bool shouldSave = true;
+					bool shouldSave = false;
 
 					var tinyMceDataTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce);
 					foreach (var tinyMceDataType in tinyMceDataTypes)
@@ -186,7 +186,7 @@ namespace AutoBlockList.Controllers
 							Task = $"Checking for macros in rich text editor with name: '{tinyMceDataType.Name}'",
 						};
 
-						await _client.CurrentTask(tinyMceDataTypeReport.Task);
+						_client.CurrentTask(tinyMceDataTypeReport.Task);
 
 						bool hasChanges = false;
 						if (tinyMceDataType.VariesByCulture())
@@ -208,13 +208,13 @@ namespace AutoBlockList.Controllers
 											Task = $"Converting macro: '{macroString}' to document type with culture: '{culture}'",
 											Status = AutoBlockListConstants.Status.Success
 										};
-										await _client.CurrentTask(macroStringReport.Task);
+										_client.CurrentTask(macroStringReport.Task);
 
 										var parameters = _autoBlockListMacroService.GetParametersFromMaco(macroString);
 										if (string.IsNullOrEmpty(parameters["macroAlias"].ToString()))
 										{
 											macroStringReport.Status = AutoBlockListConstants.Status.Failed;
-											await _client.AddReport(macroStringReport);
+											_client.AddReport(macroStringReport);
 											continue;
 										}
 
@@ -222,15 +222,15 @@ namespace AutoBlockList.Controllers
 										if (macro == null)
 										{
 											macroStringReport.Status = AutoBlockListConstants.Status.Failed;
-											await _client.AddReport(macroStringReport);
+											_client.AddReport(macroStringReport);
 											continue;
 										}
 
 										var contentType = _autoBlockListMacroService.ConvertMacroToContentType(macro, out List<ConvertReport> reports);
 										foreach (var report in reports)
-											await _client.AddReport(report);
+											_client.AddReport(report);
 
-										await _client.AddReport(macroStringReport);
+										_client.AddReport(macroStringReport);
 
 										var dataConvertReport = new ConvertReport
 										{
@@ -238,24 +238,25 @@ namespace AutoBlockList.Controllers
 											Status = AutoBlockListConstants.Status.Success
 										};
 
-										await _client.CurrentTask(dataConvertReport.Task);
+										_client.CurrentTask(dataConvertReport.Task);
 
 										var dataType = _dataTypeService.GetDataType(tinyMceDataType.DataTypeId);
 										var editor = dataType.Editor;
 										if (editor?.GetConfigurationEditor() is not RichTextConfigurationEditor configEditor)
 										{
 											dataConvertReport.Status = AutoBlockListConstants.Status.Failed;
-											await _client.AddReport(dataConvertReport);
+											_client.AddReport(dataConvertReport);
 											continue;
 										}
 
-										await _client.AddReport(dataConvertReport);
+										_client.AddReport(dataConvertReport);
 
 										richTextEditorValue = _autoBlockListMacroService.ReplaceMacroWithBlockList(macroString, parameters, configEditor, dataType, contentType, richTextEditorValue);
 										hasChanges = true;
+										shouldSave = true;
 
 										var createPartialViewReport = _autoBlockListMacroService.CreatePartialView(macro);
-										await _client.AddReport(createPartialViewReport);
+										_client.AddReport(createPartialViewReport);
 									}
 
 									if (hasChanges)
@@ -264,7 +265,7 @@ namespace AutoBlockList.Controllers
 								else
 								{
 									tinyMceDataTypeReport.Status = AutoBlockListConstants.Status.Skipped;
-									await _client.AddReport(tinyMceDataTypeReport);
+									_client.AddReport(tinyMceDataTypeReport);
 									continue;
 								}
 							}
@@ -285,14 +286,14 @@ namespace AutoBlockList.Controllers
 										Task = $"Converting macro: '{macroString}' to document type",
 										Status = AutoBlockListConstants.Status.Success
 									};
-									await _client.CurrentTask(macroStringReport.Task);
+									_client.CurrentTask(macroStringReport.Task);
 
 									var parameters = _autoBlockListMacroService.GetParametersFromMaco(macroString);
 									if (string.IsNullOrEmpty(parameters["macroAlias"].ToString()))
 									{
 										macroStringReport.Status = AutoBlockListConstants.Status.Failed;
 										macroStringReport.ErrorMessage = "Macro alias is missing";
-										await _client.AddReport(macroStringReport);
+										_client.AddReport(macroStringReport);
 										continue;
 									}
 
@@ -301,15 +302,15 @@ namespace AutoBlockList.Controllers
 									{
 										macroStringReport.Status = AutoBlockListConstants.Status.Failed;
 										macroStringReport.ErrorMessage = "No macro found";
-										await _client.AddReport(macroStringReport);
+										_client.AddReport(macroStringReport);
 										continue;
 									}
 
 									var contentType = _autoBlockListMacroService.ConvertMacroToContentType(macro, out List<ConvertReport> reports);
 									foreach (var report in reports)
-										await _client.AddReport(report);
+										_client.AddReport(report);
 
-									await _client.AddReport(macroStringReport);
+									_client.AddReport(macroStringReport);
 
 									var dataConvertReport = new ConvertReport
 									{
@@ -317,23 +318,26 @@ namespace AutoBlockList.Controllers
 										Status = AutoBlockListConstants.Status.Success
 									};
 
-									await _client.CurrentTask(dataConvertReport.Task);
+									_client.CurrentTask(dataConvertReport.Task);
 
 									var dataType = _dataTypeService.GetDataType(tinyMceDataType.DataTypeId);
 									var editor = dataType.Editor;
 									if (editor?.GetConfigurationEditor() is not RichTextConfigurationEditor configEditor)
 									{
 										dataConvertReport.Status = AutoBlockListConstants.Status.Failed;
-										await _client.AddReport(dataConvertReport);
+										_client.AddReport(dataConvertReport);
 										continue;
 									}
 
 									richTextEditorValue = _autoBlockListMacroService.ReplaceMacroWithBlockList(macroString, parameters, configEditor, dataType, contentType, richTextEditorValue);
+									
 									hasChanges = true;
-									await _client.AddReport(dataConvertReport);
+									shouldSave = true;
+
+									_client.AddReport(dataConvertReport);
 
 									var createPartialViewReport = _autoBlockListMacroService.CreatePartialView(macro);
-									await _client.AddReport(createPartialViewReport);
+									_client.AddReport(createPartialViewReport);
 								}
 
 								if (hasChanges)
@@ -342,19 +346,28 @@ namespace AutoBlockList.Controllers
 							else
 							{
 								tinyMceDataTypeReport.Status = AutoBlockListConstants.Status.Skipped;
-								await _client.AddReport(tinyMceDataTypeReport);
+								_client.AddReport(tinyMceDataTypeReport);
 								continue;
 							}
 						}
 					}
 
-					await _client.CurrentTask("Saving");
+
+					if (!shouldSave)
+					{
+						contentMacroReport.Status = AutoBlockListConstants.Status.Skipped;
+						_client.AddReport(contentMacroReport);
+						_client.Done(index + 1);
+						continue;
+					}
+
+					_client.CurrentTask("Saving");
 
 					if (_autoBlockListService.GetSaveAndPublishSetting())
 					{
 
 						_contentService.SaveAndPublish(content);
-						await _client.AddReport(new ConvertReport()
+						_client.AddReport(new ConvertReport()
 						{
 							Task = $"Saving and publishing content: '{content.Name}'",
 							Status = AutoBlockListConstants.Status.Success
@@ -363,15 +376,15 @@ namespace AutoBlockList.Controllers
 					else
 					{
 						_contentService.Save(content);
-						await _client.AddReport(new ConvertReport()
+						_client.AddReport(new ConvertReport()
 						{
 							Task = $"Saving content: {content.Name}",
 							Status = AutoBlockListConstants.Status.Success
 						});
 					}
 
-					await _client.AddReport(contentMacroReport);
-					await _client.Done(index + 1);
+					_client.AddReport(contentMacroReport);
+					_client.Done(index + 1);
 				}
 			}
 			catch (Exception ex)
@@ -413,7 +426,7 @@ namespace AutoBlockList.Controllers
 			return result;
 		}
 
-		private async Task<ConvertReport> ConvertNCDataType(int id)
+		private ConvertReport ConvertNCDataType(int id)
 		{
 			var convertReport = new ConvertReport()
 			{
@@ -425,7 +438,7 @@ namespace AutoBlockList.Controllers
 				IDataType dataType = _dataTypeService.GetDataType(id);
 				convertReport.Task = string.Format("Converting '{0}' to Block list", dataType.Name);
 
-				await _client.UpdateItem(convertReport.Task);
+				_client.UpdateItem(convertReport.Task);
 
 				var blDataType = _autoBlockListService.CreateBLDataType(dataType);
 				var existingDataType = _dataTypeService.GetDataType(blDataType.Name);
@@ -436,13 +449,13 @@ namespace AutoBlockList.Controllers
 
 					convertReport.Status = AutoBlockListConstants.Status.Success;
 
-					await _client.AddReport(convertReport);
+					_client.AddReport(convertReport);
 					return convertReport;
 				}
 
 				convertReport.Status = AutoBlockListConstants.Status.Skipped;
 
-				await _client.AddReport(convertReport);
+				_client.AddReport(convertReport);
 
 				return convertReport;
 			}
@@ -458,7 +471,7 @@ namespace AutoBlockList.Controllers
 		}
 
 		[HttpPost]
-		public async Task<ConvertReport> AddDataTypeToContentType(IContentType contentType, IDataType ncDataType)
+		public ConvertReport AddDataTypeToContentType(IContentType contentType, IDataType ncDataType)
 		{
 			var blDataType = _dataTypeService.GetDataType(string.Format(_autoBlockListService.GetNameFormatting(), ncDataType.Name));
 			var convertReport = new ConvertReport()
@@ -467,7 +480,7 @@ namespace AutoBlockList.Controllers
 				Status = AutoBlockListConstants.Status.Failed
 			};
 
-			await _client.UpdateItem(convertReport.Task);
+			_client.UpdateItem(convertReport.Task);
 
 			try
 			{
@@ -480,7 +493,7 @@ namespace AutoBlockList.Controllers
 				if (contentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
 				{
 					convertReport.Status = AutoBlockListConstants.Status.Skipped;
-					await _client.AddReport(convertReport);
+					_client.AddReport(convertReport);
 					return convertReport;
 				}
 
@@ -495,7 +508,7 @@ namespace AutoBlockList.Controllers
 							if (compositionContentType.PropertyTypeExists(string.Format(_autoBlockListService.GetAliasFormatting(), propertyType.Alias)))
 							{
 								convertReport.Status = AutoBlockListConstants.Status.Skipped;
-								await _client.AddReport(convertReport);
+								_client.AddReport(convertReport);
 								return convertReport;
 							}
 
@@ -524,12 +537,12 @@ namespace AutoBlockList.Controllers
 				convertReport.ErrorMessage = _checkLogs;
 			}
 
-			await _client.AddReport(convertReport);
+			_client.AddReport(convertReport);
 
 			return convertReport;
 		}
 
-		private async Task TransferContent(int id)
+		private void TransferContent(int id)
 		{
 			var node = _contentService.GetById(id);
 			if (node == null)
@@ -541,7 +554,7 @@ namespace AutoBlockList.Controllers
 					Status = AutoBlockListConstants.Status.Failed
 				};
 
-				await _client.AddReport(convertReport);
+				_client.AddReport(convertReport);
 			}
 
 			var allNCProperties = node.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent); ;
@@ -558,7 +571,7 @@ namespace AutoBlockList.Controllers
 							Status = AutoBlockListConstants.Status.Failed
 						};
 
-						await _client.UpdateItem(report.Task);
+						_client.UpdateItem(report.Task);
 
 						try
 						{
@@ -579,7 +592,7 @@ namespace AutoBlockList.Controllers
 							report.ErrorMessage = _checkLogs;
 						}
 
-						await _client.AddReport(report);
+						_client.AddReport(report);
 					}
 				}
 				else
@@ -590,7 +603,7 @@ namespace AutoBlockList.Controllers
 						Status = AutoBlockListConstants.Status.Failed
 					};
 
-					await _client.UpdateItem(report.Task);
+					_client.UpdateItem(report.Task);
 
 					try
 					{
@@ -611,7 +624,7 @@ namespace AutoBlockList.Controllers
 						report.ErrorMessage = _checkLogs;
 					}
 
-					await _client.AddReport(report);
+					_client.AddReport(report);
 				}
 			}
 
@@ -626,7 +639,7 @@ namespace AutoBlockList.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> ConvertNC(ConvertDto dto)
+		public IActionResult ConvertNC(ConvertDto dto)
 		{
 			try
 			{
@@ -636,10 +649,10 @@ namespace AutoBlockList.Controllers
 				{
 					var index = dto.Contents.FindIndex(x => x == content);
 
-					await _client.CurrentTask("Converting data types");
-					await _client.SetTitle(content.Name);
-					await _client.SetSubTitle(index);
-					await _client.UpdateStep("dataTypes");
+					_client.CurrentTask("Converting data types");
+					_client.SetTitle(content.Name);
+					_client.SetSubTitle(index);
+					_client.UpdateStep("dataTypes");
 
 					var fullContentType = _contentTypeService.Get(content.ContentTypeKey);
 
@@ -647,16 +660,16 @@ namespace AutoBlockList.Controllers
 
 					foreach (var dataType in ncDataTypes)
 					{
-						var convertReport = await ConvertNCDataType(dataType.Id);
+						var convertReport = ConvertNCDataType(dataType.Id);
 						if (convertReport.Status == AutoBlockListConstants.Status.Failed)
 						{
-							await _client.Done(index);
+							_client.Done(index);
 							return ValidationProblem();
 						}
 					}
 
-					await _client.CurrentTask("Adding data type to document type");
-					await _client.UpdateStep("contentTypes");
+					_client.CurrentTask("Adding data type to document type");
+					_client.UpdateStep("contentTypes");
 
 					foreach (var dataType in ncDataTypes)
 					{
@@ -665,10 +678,10 @@ namespace AutoBlockList.Controllers
 
 						if (hasNcDataType != null)
 						{
-							var convertReport = await AddDataTypeToContentType(fullContentType, dataType);
+							var convertReport = AddDataTypeToContentType(fullContentType, dataType);
 							if (convertReport.Status == AutoBlockListConstants.Status.Failed)
 							{
-								await _client.Done(index);
+								_client.Done(index);
 								return ValidationProblem();
 							}
 						}
@@ -677,21 +690,21 @@ namespace AutoBlockList.Controllers
 							var contentTypes = _autoBlockListService.GetElementContentTypesFromDataType(dataType);
 							foreach (var contentType in contentTypes)
 							{
-								var convertReport = await AddDataTypeToContentType(contentType, dataType);
+								var convertReport = AddDataTypeToContentType(contentType, dataType);
 								if (convertReport.Status == AutoBlockListConstants.Status.Failed)
 								{
-									await _client.Done(index);
+									_client.Done(index);
 									return ValidationProblem();
 								}
 							}
 						}
 					}
 
-					await _client.CurrentTask("Converting content");
-					await _client.UpdateStep("content");
-					await TransferContent(content.Id);
+					_client.CurrentTask("Converting content");
+					_client.UpdateStep("content");
+					TransferContent(content.Id);
 
-					await _client.Done(index + 1);
+					_client.Done(index + 1);
 				}
 
 			}

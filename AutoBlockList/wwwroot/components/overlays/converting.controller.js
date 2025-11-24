@@ -38,26 +38,32 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
 
         connection.on("AddReport", function (report) {
             vm.report.push(report);
+            $scope.$apply();
         });
 
         connection.on("CurrentTask", function (task) {
             vm.currentTask = task;
+            $scope.$apply();
         });
 
         connection.on("UpdateStep", function (task) {
             vm.task = task;
+            $scope.$apply();
         });
 
         connection.on("UpdateItem", function (item) {
             vm.item = item;
+            $scope.$apply();
         });
 
         connection.on("SetTitle", function (item) {
             setTitle(item);
+            $scope.$apply();
         });
 
         connection.on("SetSubTitle", function (item) {
             setSubTitle(item);
+            $scope.$apply();
         });
 
         connection.on("Done", function (item) {
@@ -69,11 +75,14 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
                 document.body.classList.add("hideClose");
                 notificationsService.success("Auto block list", "successfully converted everything.")
             }
+
+            $scope.$apply();
         });
     });
 
     function setTitle(item) {
         $scope.model.title = "Converting '" + item + "'";
+       
     };
 
     function setSubTitle(item) {
