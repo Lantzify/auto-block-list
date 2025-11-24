@@ -23,50 +23,6 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     vm.appSettings = JSON.stringify(appSettings, null, 4);
 
-    vm.toggleSelect = function (content) {
-        var pos = vm.findIndex(vm.selectedContent, content.id);
-
-        if (pos !== -1) {
-            vm.selectedContent.splice(pos, 1);
-        } else {
-            vm.selectedContent.push(content);
-        }
-    };
-
-    vm.toggleSelectMacro = function (content) {
-        var pos = vm.findIndex(vm.selectedMacroContent, content.id);
-
-        if (pos !== -1) {
-            vm.selectedMacroContent.splice(pos, 1);
-        } else {
-            vm.selectedMacroContent.push(content);
-        }
-    };
-
-    vm.toggleSelectAll = function (macro) {
-        if (macro) {
-            vm.pagedContentWithMacros.items.forEach(function (e) {
-                if (vm.findIndex(vm.selectedMacroContent, e.id) === -1) {
-                    vm.selectedMacroContent.push(e);
-                }
-            });
-        } else {
-            vm.pagedContent.items.forEach(function (e) {
-                if (vm.findIndex(vm.selectedContent, e.id) === -1) {
-                    vm.selectedContent.push(e);
-                }
-            });
-        }
-    };
-
-    vm.clearSelection = function (macro) {
-        if (macro) {
-            vm.selectedMacroContent = []
-        } else {
-            vm.selectedContent = [];
-        }
-    };
-
     $q.all({
         getAllContentWithNC: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=0"),
         getAllContentWithTinyMce: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithTinyMce?page=0"),
@@ -79,7 +35,50 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.pagedContentWithMacros.pageNumber += 1;
     });
 
+    vm.toggleSelect = function (selectedArray, content) {
+        var pos = vm.findIndex(selectedArray, content.id);
 
+        if (pos !== -1) {
+            selectedArray.splice(pos, 1);
+        } else {
+            selectedArray.push(content);
+        }
+    };
+
+    vm.toggleSelectAll = function (pagedArray, selectedArray) {
+        pagedArray.items.forEach(function (e) {
+            if (vm.findIndex(selectedArray, e.id) === -1) {
+                selectedArray.push(e);
+            }
+        });
+    };
+
+    vm.clearSelection = function (selectedArray) {
+        selectedArray.splice(0, selectedArray.length);
+    };
+
+    vm.openContent = function (contentId) {
+        var options = {
+            id: contentId,
+            size: "large",
+            submit: function (model) {
+                editorService.close();
+            },
+            close: function () {
+                editorService.close();
+            }
+        };
+        editorService.contentEditor(options);
+    };
+
+    vm.findIndex = function (arr, id) {
+        return arr.findIndex(function (index) {
+            return index.id === id;
+        });
+    };
+
+
+    //Macro
     vm.paginatorMacro = function (page) {
         vm.loadingMacroTable = true;
         $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithTinyMce?page=" + page).then(function (response) {
@@ -101,7 +100,40 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.paginatorMacro(pageNumber - 1);
     };
 
+    vm.convertMacro = function () {
 
+        var confirmOptions = {
+            title: "Confirm convert",
+            view: "/App_Plugins/AutoBlockList/components/overlays/confirmMacro.html",
+            submit: function () {
+                var options = {
+                    view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
+                    title: "Converting",
+                    content: vm.selectedMacroContent,
+                    convertType: "Macro",
+                    disableBackdropClick: true,
+                    disableEscKey: true,
+                    disableSubmitButton: true,
+                    submitButtonLabel: "Confirm",
+                    closeButtonLabel: "Close",
+                    submit: function (model) {
+                        $route.reload();
+                        overlayService.close();
+                        document.body.classList.remove("hideClose");
+                    },
+                    close: function () {
+                        overlayService.close();
+                    }
+                };
+
+                overlayService.open(options);
+            }
+        }
+
+        overlayService.confirm(confirmOptions);
+    }
+
+    //NC
     vm.paginator = function (page) {
         vm.loadingTable = true;
         $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=" + page).then(function (response) {
@@ -155,57 +187,4 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
         overlayService.confirm(confirmOptions);
     }
-
-    vm.convertMacro = function () {
-
-        var confirmOptions = {
-            title: "Confirm convert",
-            view: "/App_Plugins/AutoBlockList/components/overlays/confirmMacro.html",
-            submit: function () {
-                var options = {
-                    view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
-                    title: "Converting",
-                    content: vm.selectedMacroContent,
-                    convertType: "Macro",
-                    disableBackdropClick: true,
-                    disableEscKey: true,
-                    disableSubmitButton: true,
-                    submitButtonLabel: "Confirm",
-                    closeButtonLabel: "Close",
-                    submit: function (model) {
-                        $route.reload();
-                        overlayService.close();
-                        document.body.classList.remove("hideClose");
-                    },
-                    close: function () {
-                        overlayService.close();
-                    }
-                };
-
-                overlayService.open(options);
-            }
-        }
-
-        overlayService.confirm(confirmOptions);
-    }
-
-    vm.openContent = function (contentId) {
-        var options = {
-            id: contentId,
-            size: "large",
-            submit: function (model) {
-                editorService.close();
-            },
-            close: function () {
-                editorService.close();
-            }
-        };
-        editorService.contentEditor(options);
-    };
-
-    vm.findIndex = function (arr, id) {
-        return arr.findIndex(function (index) {
-            return index.id === id;
-        });
-    };
 });

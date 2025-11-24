@@ -15,7 +15,7 @@ namespace AutoBlockList.Hubs
 			_connectionId = connectionId;
 		}
 
-        private void Send<TObject>(string method, TObject item)
+        private async Task SendAsync<TObject>(string method, TObject item)
         {
             if (_hubContext == null || string.IsNullOrEmpty(_connectionId))
                 return;
@@ -23,48 +23,48 @@ namespace AutoBlockList.Hubs
             var client = _hubContext.Clients.Client(_connectionId);
             if (client != null)
             {
-                client.SendAsync(method, item).Wait();
+                await client.SendAsync(method, item);
                 return;
             }
 
-            _hubContext.Clients.All.SendAsync(method, item).Wait();
+            await _hubContext.Clients.All.SendAsync(method, item);
         }
 
-        public void AddReport<TObject>(TObject item)
+        public async Task AddReport<TObject>(TObject item)
 		{
-			Send("AddReport", item);
+			await SendAsync("AddReport", item);
 		}
 
-        public void CurrentTask<TObject>(TObject item)
+        public async Task CurrentTask<TObject>(TObject item)
         {
-            Send("CurrentTask", item);
+			await SendAsync("CurrentTask", item);
         }
 
-        public void UpdateStep<TObject>(TObject item)
+        public async Task UpdateStep<TObject>(TObject item)
 		{
-            Send("UpdateStep", item);
+			await SendAsync("UpdateStep", item);
 		}
 
 
-		public void UpdateItem<TObject>(TObject item)
+		public async Task UpdateItem<TObject>(TObject item)
 		{
-            Send("UpdateItem", item);
+			await SendAsync("UpdateItem", item);
 		}
 
-        public void SetTitle<TObject>(TObject item)
+        public async Task SetTitle<TObject>(TObject item)
         {
-            Send("SetTitle", item);
+			await SendAsync("SetTitle", item);
         }
 
-        public void SetSubTitle<TObject>(TObject item)
+        public async Task SetSubTitle<TObject>(TObject item)
         {
-            Send("SetSubTitle", item);
+			await SendAsync("SetSubTitle", item);
         }
 
 
-        public void Done<TObject>(TObject item)
+        public async Task Done<TObject>(TObject item)
 		{
-            Send("Done", item);
+			await SendAsync("Done", item);
 		}
 	}
 }

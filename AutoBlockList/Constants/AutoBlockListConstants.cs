@@ -10,24 +10,28 @@
             "key"
         };
 
-        public const string SQL = @"
+		public const string SQL_WITH_MACRO_INFO = @"
 SELECT DISTINCT
-	n.id AS[nodeId]
+    n.id AS NodeId,
+    CASE 
+        WHEN pd.textValue LIKE '%UMBRACO_MACRO%'
+        THEN 1 
+        ELSE 0 
+    END AS HasMacro
 FROM
-	umbracoNode AS n INNER JOIN
-	umbracoDocument AS d ON d.nodeId = n.id INNER JOIN
-	umbracoContent AS c ON c.nodeId = n.id INNER JOIN
-	umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.current = 1 INNER JOIN
-	cmsPropertyType AS pt ON pt.contentTypeId = c.contentTypeId INNER JOIN
-	umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
+    umbracoNode AS n 
+    INNER JOIN umbracoDocument AS d ON d.nodeId = n.id 
+    INNER JOIN umbracoContent AS c ON c.nodeId = n.id 
+    INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.current = 1 
+    INNER JOIN cmsPropertyType AS pt ON pt.contentTypeId = c.contentTypeId 
+    INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
 WHERE
-	(d.published = 1 OR d.edited = 1) AND
-	n.trashed = 0 AND
-	pt.Alias in (@propertyTypeIds) AND
-	pd.textValue LIKE '%UMBRACO_MACRO%'
+    (d.published = 1 OR d.edited = 1) 
+    AND n.trashed = 0 
+    AND pt.Alias IN (@propertyTypeIds)
+    AND pd.textValue LIKE '%UMBRACO_MACRO%' OR pd.textValue LIKE '%umb-rte-block%'
 ORDER BY
-	n.id ASC
-;";
+    n.id ASC;";
 
 		public enum Status
         {

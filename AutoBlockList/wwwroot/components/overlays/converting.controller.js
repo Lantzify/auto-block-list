@@ -52,11 +52,11 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
             vm.item = item;
         });
 
-        connection.on("UpdateTitle", function (item) {
+        connection.on("SetTitle", function (item) {
             setTitle(item);
         });
 
-        connection.on("UpdateSubTitle", function (item) {
+        connection.on("SetSubTitle", function (item) {
             setSubTitle(item);
         });
 
