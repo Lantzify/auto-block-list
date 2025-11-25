@@ -13,7 +13,7 @@ namespace AutoBlockList.Services.interfaces
         string GetBlockListEditorSize();
         IDataType? CreateBLDataType(IDataType ncDataType);
         PropertyType? MapPropertyType(IPropertyType propertyType, IDataType ncDataType, IDataType blDataType);
-        IEnumerable<CustomDisplayDataType> GetAllNCDataTypes(string alias);
+        IEnumerable<CustomDisplayDataType> GetAllDataTypesWithAlias(string alias);
         IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType);
         bool HasBLContent(IContent item);
         IEnumerable<IPropertyType> GetPropertyTypes(IContentType contentType);

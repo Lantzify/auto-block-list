@@ -13,7 +13,18 @@
 
             <div class="umb-logviewer" ng-if="!vm.loading">
                 <div class="umb-logviewer__main-content" style="width: calc(100% - 582px);">
-                    <umb-box>
+
+                    <umb-box ng-if="!vm.loadingTable && vm.pagedContent.totalItems === 0">
+                        <umb-box-content>
+
+                            <umb-empty-state size="small">
+                                There are no nested contents that needs to be converted.
+                            </umb-empty-state>
+
+                        </umb-box-content>
+                    </umb-box>
+
+                    <umb-box ng-if="vm.pagedContent.totalItems > 0">
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
@@ -90,8 +101,18 @@
                         </umb-box-content>
                     </umb-box>
 
+                    <umb-box ng-if="!vm.loadingMacroTable && vm.pagedContentWithMacros.totalItems === 0">
+                        <umb-box-content>
+
+                            <umb-empty-state size="small">
+                                There are no rich text editors that needs to be converted.
+                            </umb-empty-state>
+
+                        </umb-box-content>
+                    </umb-box>
+
                     <umb-box ng-if="vm.pagedContentWithMacros.length !== 0">
-                        <umb-box-header title="Macros" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
+                        <umb-box-header title="Macros" description="Converts all macros to block lists. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>
 
@@ -166,15 +187,6 @@
 
                         </umb-box-content>
                     </umb-box>
-                    <umb-box ng-if="vm.pagedContentWithMacros.length === 0">
-                        <umb-box-content>
-                            <p class="mb0">
-                                <umb-icon icon="icon-check color-green"></umb-icon>
-                                No macros needing to be converted
-                            </p>
-                        </umb-box-content>
-                    </umb-box>
-
                 </div>
                 <div class="umb-logviewer__sidebar">
                     <umb-box>

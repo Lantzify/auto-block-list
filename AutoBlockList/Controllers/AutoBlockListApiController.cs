@@ -67,11 +67,11 @@ namespace AutoBlockList.Controllers
 		}
 
 		[HttpGet]
-		public IEnumerable<CustomContentTypeReferences> GetAllNCContentTypes(string alias)
+		public IEnumerable<CustomContentTypeReferences> GetContentTypesByPropertyEditorAlias(string alias)
 		{
 			var contentTypeReferences = new List<CustomContentTypeReferences>();
 
-			foreach (var dataType in _autoBlockListService.GetAllNCDataTypes(alias))
+			foreach (var dataType in _autoBlockListService.GetAllDataTypesWithAlias(alias))
 			{
 				var result = new DataTypeReferences();
 				var usages = _dataTypeService.GetReferences(dataType.Id);
@@ -102,7 +102,11 @@ namespace AutoBlockList.Controllers
 		[HttpGet]
 		public PagedResult<DisplayAutoBlockListContent> GetAllContentWithTinyMce(int page)
 		{
-			var contentTypes = GetAllNCContentTypes(PropertyEditors.Aliases.TinyMce);
+			var contentTypes = GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.TinyMce);
+
+			if (contentTypes == null || !contentTypes.Any())
+				return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
+
 			var contentTypesIds = contentTypes.Select(x => x.Id).ToList();
 			contentTypesIds.AddRange(_autoBlockListService.GetComposedOf(contentTypesIds));
 
@@ -115,9 +119,8 @@ namespace AutoBlockList.Controllers
 			}
 
 			if (!tinyMcePropertyTypeIds.Any())
-			{
-				return new PagedResult<DisplayAutoBlockListContent>(0, page, 50);
-			}
+				return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
+			
 
 			using (var scope = _scopeProvider.CreateScope())
 			{
@@ -404,10 +407,14 @@ namespace AutoBlockList.Controllers
 		{
 			var contentTypes = _runtimeCache.GetCacheItem(AutoBlockListConstants.CacheKey, () =>
 			{
-				var contentTypes = GetAllNCContentTypes(PropertyEditors.Aliases.NestedContent);
+				var contentTypes = GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.NestedContent);
 
 				return contentTypes != null && contentTypes.Any() ? contentTypes : null;
 			});
+
+			if (contentTypes == null || !contentTypes.Any())
+                return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
+
 			var contentTypesIds = contentTypes.Select(x => x.Id).ToList();
 			contentTypesIds.AddRange(_autoBlockListService.GetComposedOf(contentTypesIds));
 
