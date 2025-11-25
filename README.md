@@ -2,13 +2,18 @@
 ![Version](https://img.shields.io/nuget/v/AutoBlockList?label=version)
 [![Nuget](https://img.shields.io/nuget/dt/AutoBlockList?color=2346c018&logo=Nuget)](https://www.nuget.org/packages/AutoBlockList/)
 
-Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format.
+Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content and macros into an block list. In addition it transfers the content to the new block list format.
 
 ## About
-With the removal of nested content in Umbraco 13. Uppgrading can potentially be challenging if you us it frequently. That's where Auto block list comes in. With one click AutoBlockLists runs the following workflow.
+With the removal of nested content in Umbraco 13. And macros in Umbraco 14. Upgrading can potentially be challenging if you use it frequently. That's where Auto block list comes in. With one click AutoBlockLists runs the following workflow based on content type.
+
+**Nested Content**
 - Creates the block list data type based on the old nested content data type.
 - Adds the new data type to the document type.
 - And transfers the content to the newly created block list.
+
+**Macro**
+- 
 
 ### Settings
 ```
@@ -16,13 +21,15 @@ With the removal of nested content in Umbraco 13. Uppgrading can potentially be 
      BlockListEditorSize: "medium",
      SaveAndPublish: true,
      NameFormatting: "[Block list] - {0}",
-     AliasFormatting: "{0}BL"
+     AliasFormatting: "{0}BL",
+     FolderNameForContentTypes: "[Rich text editor] - Components"
 }
 ```
-- ``BlockListEditorSize`` Detirmes the default size when creating a block list data type. Sizes: ``small``, ``medium``, ``large``.
-- ``SaveAndPublish`` When transfering content. If the node should be saved and published or only saved.
+- ``BlockListEditorSize`` Determines the default size when creating a block list data type. Sizes: ``small``, ``medium``, ``large``.
+- ``SaveAndPublish`` When transferring content. If the node should be saved and published or only saved.
 - In the ``NameFormatting`` setting the ``{0}`` will be replaced with the nested content data type name. Make sure to keep the ``{0}``. 
 - In the ``AliasFormatting`` setting the ``{0}`` will be replaced with the property alias containing the nested content. Make sure to keep the ``{0}``. 
+- ``FolderNameForContentTypes`` Determines the name of the folder where document types based on macros will be created. (This folder will be created in the root)
 
 ## Contributing
 
@@ -30,7 +37,7 @@ If you would like to help me improve this package, feel free to create a pull re
 
 ## Issues
 
-If you find any issues with the package feel free to raise a issue!
+If you find any issues with the package feel free to raise an issue!
 
 ## Screenshots
 ![Demo](assets/demo.gif "Demo")
