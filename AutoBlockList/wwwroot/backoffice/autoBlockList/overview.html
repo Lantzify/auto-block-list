@@ -9,9 +9,7 @@
 
         <umb-editor-container>
 
-            <umb-load-indicator ng-if="vm.loading"></umb-load-indicator>
-
-            <div class="umb-logviewer" ng-if="!vm.loading">
+            <div class="umb-logviewer">
                 <div class="umb-logviewer__main-content" style="width: calc(100% - 582px);">
 
                     <umb-box ng-if="!vm.loadingTable && vm.pagedContent.totalItems === 0">
@@ -24,7 +22,7 @@
                         </umb-box-content>
                     </umb-box>
 
-                    <umb-box ng-if="vm.pagedContent.totalItems > 0">
+                    <umb-box ng-if="vm.pagedContent.totalItems !== 0">
                         <umb-box-header title="Content" description="Converts all nested content data types to block lists and adds them to the contents document type. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>

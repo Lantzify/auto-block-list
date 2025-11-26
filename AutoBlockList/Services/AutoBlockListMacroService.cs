@@ -5,6 +5,7 @@ using Umbraco.Extensions;
 using Umbraco.Cms.Core.IO;
 using Newtonsoft.Json.Linq;
 using Umbraco.Cms.Core.Models;
+using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,7 @@ namespace AutoBlockList.Services
 	{
 		private readonly FileSystems _fileSystem;
 		private readonly IFileService _fileService;
+		private readonly IAutoBlockListContext _context;
 		private readonly IDataTypeService _dataTypeService;
 		private readonly IShortStringHelper _shortStringHelper;
 		private readonly IContentTypeService _contentTypeService;
@@ -39,6 +41,7 @@ namespace AutoBlockList.Services
 
 		public AutoBlockListMacroService(FileSystems fileSystem,
 			IFileService fileService,
+			IAutoBlockListContext context,
 			IDataTypeService dataTypeService,
 			IShortStringHelper shortStringHelper,
 			IContentTypeService contentTypeService,
@@ -46,6 +49,7 @@ namespace AutoBlockList.Services
 		{
 			_fileSystem = fileSystem;
 			_fileService = fileService;
+			_context = context;
 			_dataTypeService = dataTypeService;
 			_shortStringHelper = shortStringHelper;
 			_contentTypeService = contentTypeService;
@@ -70,6 +74,7 @@ namespace AutoBlockList.Services
 
 		public Dictionary<string, object> GetParametersFromMaco(string macroString)
 		{
+			_context.Client.Done("failed");
 			var parameters = new Dictionary<string, object>();
 
 			if (string.IsNullOrEmpty(macroString))
@@ -97,8 +102,8 @@ namespace AutoBlockList.Services
 			reports = new List<ConvertReport>();
 
 			string folderName = GetFolderNameForContentTypes();
-			var containers = _contentTypeService.GetContainers(folderName, -1);
-			var existingContainer = containers?.FirstOrDefault();
+			_contentTypeService.GetContainer(-1);
+			var existingContainer = _contentTypeService.GetContainer(AutoBlockListConstants.ContentTypeFolderGuid);
 			int existingId = existingContainer?.Id ?? -1;
 
 			if (existingContainer == null)
@@ -106,14 +111,14 @@ namespace AutoBlockList.Services
 				var existingFolders = new ConvertReport
 				{
 					Task = $"Creating folder '{folderName}'",
-					Status = Constants.AutoBlockListConstants.Status.Skipped
+					Status = AutoBlockListConstants.Status.Skipped
 				};
 
-				var attempt = _contentTypeService.CreateContainer(-1, Guid.NewGuid(), folderName);
+				var attempt = _contentTypeService.CreateContainer(-1, AutoBlockListConstants.ContentTypeFolderGuid, folderName);
 				if (attempt.Success)
 				{
 					existingId = attempt.Result.Entity.Id;
-					existingFolders.Status = Constants.AutoBlockListConstants.Status.Success;
+					existingFolders.Status = AutoBlockListConstants.Status.Success;
 				}
 
 				reports.Add(existingFolders);
@@ -122,19 +127,20 @@ namespace AutoBlockList.Services
 			var contentTypeReport = new ConvertReport
 			{
 				Task = $"Creating document type for macro '{macro.Name}'",
-				Status = Constants.AutoBlockListConstants.Status.Skipped
+				Status = AutoBlockListConstants.Status.Skipped
 			};
 
-			var alreadyExists = _contentTypeService.Get(macro.Alias);
+			var alreadyExists = TryGetContentTypeByAlias(macro.Alias, out string newAlias);
+
 			if (alreadyExists != null)
 			{
 				reports.Add(contentTypeReport);
-				return alreadyExists as ContentType;
+				return alreadyExists;
 			}
-				
+
 			ContentType contentType = new ContentType(_shortStringHelper, existingId)
 			{
-				Alias = macro.Alias,
+				Alias = !string.IsNullOrEmpty(newAlias) ? newAlias : macro.Alias,
 				Name = macro.Name,
 				Icon = "icon-settings-alt",
 				IsElement = true,	
@@ -174,6 +180,30 @@ namespace AutoBlockList.Services
 			return contentType;
 		}
 
+		private ContentType TryGetContentTypeByAlias(string alias, out string newAlias)
+		{
+			var firstAttempt = _contentTypeService.Get(alias);
+			if (firstAttempt != null)
+			{
+				var hasParametersGroup = firstAttempt.PropertyGroups.Any(x => x.Alias == "parameters");
+				if (hasParametersGroup)
+				{
+					newAlias = firstAttempt.Alias;
+					return firstAttempt as ContentType;
+				}
+				else
+				{
+					newAlias = "macro" + alias;
+					return TryGetContentTypeByAlias(newAlias, out string temp);
+				}
+			}
+			else
+			{
+				newAlias = alias;
+				return null;
+			}
+		}
+
 		public RichTextEditorValue ReplaceMacroWithBlockList(string macroString, Dictionary<string, object> parameters, RichTextConfigurationEditor configEditor, IDataType dataType, ContentType contentType, RichTextEditorValue richTextEditorValue)
 		{
 			var currentConfig = dataType.Configuration as RichTextConfiguration;
@@ -197,6 +227,7 @@ namespace AutoBlockList.Services
 
 			var contentUdi = new GuidUdi("element", Guid.NewGuid());
 
+			richTextEditorValue.Blocks ??= new BlockValue();
 			richTextEditorValue.Blocks.ContentData.Add(new BlockItemData()
 			{
 				Udi = contentUdi,
@@ -234,7 +265,7 @@ namespace AutoBlockList.Services
 			ConvertReport report = new ConvertReport
 			{
 				Task = $"Creating partial view for macro '{macro.Name}'",
-				Status = Constants.AutoBlockListConstants.Status.Skipped
+				Status = AutoBlockListConstants.Status.Skipped
 			};
 
 			string macroPartialView = macro.Alias + ".cshtml";
@@ -251,7 +282,7 @@ namespace AutoBlockList.Services
 					using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
 					_fileSystem.PartialViewsFileSystem.AddFile(_partialViewDirectory + macroPartialView, stream);
 
-					report.Status = Constants.AutoBlockListConstants.Status.Success;
+					report.Status = AutoBlockListConstants.Status.Success;
 				}
 			}
 

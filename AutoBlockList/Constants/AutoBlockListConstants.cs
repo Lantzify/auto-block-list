@@ -3,7 +3,12 @@
     public static class AutoBlockListConstants
     {
         public const string CacheKey = "AutoBlockListContentTypes";
-        public static readonly string[] DefaultNC = {
+        public const string TinyMCECacheKey = "AutoBlockListContentTypesTinyMCE";
+        public const string TinyMCECacheKey_Page = "AutoBlockListContentTypesTinyMCE_Page_{0}";
+
+        public static Guid ContentTypeFolderGuid = Guid.Parse("2befed8a-d4a0-43fb-ad34-453cb6c2f63d");
+
+		public static readonly string[] DefaultNC = {
             "name",
             "ncContentTypeAlias",
             "PropType",
@@ -11,7 +16,7 @@
         };
 
 		public const string SQL_WITH_MACRO_INFO = @"
-SELECT DISTINCT
+SELECT
     n.id AS NodeId,
     CASE 
         WHEN pd.textValue LIKE '%UMBRACO_MACRO%'
@@ -22,16 +27,19 @@ FROM
     umbracoNode AS n 
     INNER JOIN umbracoDocument AS d ON d.nodeId = n.id 
     INNER JOIN umbracoContent AS c ON c.nodeId = n.id 
-    INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.current = 1 
+    INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.[current] = 1 
     INNER JOIN cmsPropertyType AS pt ON pt.contentTypeId = c.contentTypeId 
     INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
 WHERE
     (d.published = 1 OR d.edited = 1) 
     AND n.trashed = 0 
     AND pt.Alias IN (@propertyTypeIds)
-    AND pd.textValue LIKE '%UMBRACO_MACRO%' OR pd.textValue LIKE '%umb-rte-block%'
+    AND (
+        pd.textValue LIKE '%UMBRACO_MACRO%' OR
+        pd.textValue LIKE '%umb-rte-block%'
+     )
 ORDER BY
-    n.id ASC;";
+    n.id ASC";
 
 		public enum Status
         {

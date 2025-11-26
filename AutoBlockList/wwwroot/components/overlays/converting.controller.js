@@ -67,13 +67,18 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         });
 
         connection.on("Done", function (item) {
-            vm.showReport = true;
             setSubTitle(item);
 
             if (item === $scope.model.content.length) {
+                vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
                 notificationsService.success("Auto block list", "successfully converted everything.")
+            } else if (item == "failed") {
+                vm.showReport = true;
+                $scope.model.disableSubmitButton = false;
+                document.body.classList.add("hideClose");
+                notificationsService.error("Auto block list", "failed to converted everything.")
             }
 
             $scope.$apply();

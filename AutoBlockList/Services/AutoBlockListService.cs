@@ -86,7 +86,7 @@ namespace AutoBlockList.Services
             return blDataType;
         }
 
-        public IEnumerable<CustomDisplayDataType> GetAllNCDataTypes(string alias)
+        public IEnumerable<CustomDisplayDataType> GetAllDataTypesWithAlias(string alias)
         {
             var dataTypes = new List<CustomDisplayDataType>();
             foreach (var dataType in _dataTypeService.GetAll().Where(x => x.EditorAlias == alias))
@@ -219,7 +219,7 @@ namespace AutoBlockList.Services
                 SupportsPublishing = propertyType.SupportsPublishing,
                 SortOrder = propertyType.SortOrder,
             };
-        }
+		}
 
         public IEnumerable<IDataType> GetDataTypesInContentType(IContentType contentType)
         {

@@ -3,10 +3,12 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     $http,
     $route,
     editorService,
-    overlayService) {
+    overlayService,
+    notificationsService) {
 
     var vm = this;
-    vm.loading = true;
+    vm.loadingTable = true;
+    vm.loadingMacroTable = true;
 
     vm.selectedContent = []
     vm.selectedMacroContent = []
@@ -25,14 +27,20 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
     $q.all({
         getAllContentWithNC: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithNC?page=0"),
-        getAllContentWithTinyMce: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithTinyMce?page=0"),
+        getAllContentWithTinyMce: $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithTinyMce?page=1"),
     }).then(function (promises) {
-        vm.loading = false;
+        vm.loadingMacroTable = false;
+        vm.loadingTable = false;
         vm.pagedContent = promises.getAllContentWithNC.data;
         vm.pagedContent.pageNumber += 1;
 
         vm.pagedContentWithMacros = promises.getAllContentWithTinyMce.data;
-        vm.pagedContentWithMacros.pageNumber += 1;
+    }, function (err) {
+        if (err.data && (err.data.message || err.data.Detail)) {
+            notificationsService.error("Auto block list", err.data.message ?? err.data.Detail);
+        } else {
+            notificationsService.error("Auto block list", "Failed to load. Try again or check logs for further information.")
+        }
     });
 
     vm.toggleSelect = function (selectedArray, content) {
@@ -83,21 +91,21 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.loadingMacroTable = true;
         $http.get("/umbraco/backoffice/api/AutoBlockListApi/GetAllContentWithTinyMce?page=" + page).then(function (response) {
             vm.pagedContentWithMacros = response.data;
-            vm.pagedContentWithMacros.pageNumber += 1;
+            vm.pagedContentWithMacros.pageNumber;
             vm.loadingMacroTable = false;
         });
     };
 
     vm.nextMacroPage = function () {
-        vm.paginatorMacro(vm.pagedContentWithMacros.pageNumber);
+        vm.paginatorMacro(vm.pagedContentWithMacros.pageNumber += 1);
     };
 
     vm.prevMacroPage = function () {
-        vm.paginatorMacro(vm.pagedContentWithMacros.pageNumber -= 2);
+        vm.paginatorMacro(vm.pagedContentWithMacros.pageNumber -= 1);
     };
 
     vm.goToMacroPage = function (pageNumber) {
-        vm.paginatorMacro(pageNumber - 1);
+        vm.paginatorMacro(pageNumber);
     };
 
     vm.convertMacro = function () {

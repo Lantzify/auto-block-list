@@ -2,7 +2,7 @@
 
 namespace AutoBlockList.Hubs
 {
-	public class AutoBlockListHubClient
+	public class AutoBlockListHubClient : IAutoBlockListHubClient
 	{
 		private readonly IHubContext<AutoBlockListHub> _hubContext;
 		private readonly string _connectionId;
