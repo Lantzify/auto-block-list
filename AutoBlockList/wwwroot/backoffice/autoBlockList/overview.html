@@ -103,13 +103,13 @@
                         <umb-box-content>
 
                             <umb-empty-state size="small">
-                                There are no rich text editors that needs to be converted.
+                                There are no macros that needs to be converted.
                             </umb-empty-state>
 
                         </umb-box-content>
                     </umb-box>
 
-                    <umb-box ng-if="vm.pagedContentWithMacros.length !== 0">
+                    <umb-box ng-if="vm.pagedContentWithMacros.totalItems !== 0 ">
                         <umb-box-header title="Macros" description="Converts all macros to block lists. It also converts the content to make it work with block list."></umb-box-header>
 
                         <umb-box-content>

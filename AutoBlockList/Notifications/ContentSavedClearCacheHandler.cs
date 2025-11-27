@@ -1,6 +1,5 @@
 ﻿using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Events;
-using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Notifications;
 using static Umbraco.Cms.Core.Constants;
 
@@ -16,7 +15,13 @@ namespace AutoBlockList.Notifications
 
 		public void Handle(ContentSavedNotification notification)
 		{
-			if (notification.SavedEntities.Any(x => x.Properties.Any(p => p.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)))
+            string[] aliases = new string[]
+            {
+                PropertyEditors.Aliases.TinyMce,
+                PropertyEditors.Aliases.BlockList
+            };
+
+			if (notification.SavedEntities.Any(x => x.Properties.Any(p => aliases.Contains(p.PropertyType.PropertyEditorAlias))))
 				_runtimeCache.ClearByKey("AutoBlockListContentTypesTinyMCE_Page_");
 		}
 	}

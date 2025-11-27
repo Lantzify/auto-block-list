@@ -33,7 +33,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         vm.loadingTable = false;
         vm.pagedContent = promises.getAllContentWithNC.data;
         vm.pagedContent.pageNumber += 1;
-
+        console.log(promises.getAllContentWithTinyMce.data)
         vm.pagedContentWithMacros = promises.getAllContentWithTinyMce.data;
     }, function (err) {
         if (err.data && (err.data.message || err.data.Detail)) {

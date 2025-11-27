@@ -2,6 +2,7 @@
 {
     public static class AutoBlockListConstants
     {
+        public const string CheckLogs = "Check logs for futher details";
         public const string CacheKey = "AutoBlockListContentTypes";
         public const string TinyMCECacheKey = "AutoBlockListContentTypesTinyMCE";
         public const string TinyMCECacheKey_Page = "AutoBlockListContentTypesTinyMCE_Page_{0}";
@@ -28,7 +29,7 @@ FROM
     INNER JOIN umbracoDocument AS d ON d.nodeId = n.id 
     INNER JOIN umbracoContent AS c ON c.nodeId = n.id 
     INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.[current] = 1 
-    INNER JOIN cmsPropertyType AS pt ON pt.contentTypeId = c.contentTypeId 
+    INNER JOIN cmsPropertyType AS pt
     INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
 WHERE
     (d.published = 1 OR d.edited = 1) 

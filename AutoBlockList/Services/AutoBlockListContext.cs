@@ -5,18 +5,18 @@ namespace AutoBlockList.Services
 {
     public class AutoBlockListContext : IAutoBlockListContext
     {
-        private IAutoBlockListHubClient? client;
+        private IAutoBlockListHubClient? _client;
 
-        public IAutoBlockListHubClient? Client => client;
+        public IAutoBlockListHubClient? Client => _client;
 
         public void SetClient(IAutoBlockListHubClient client)
         {
-            client = client;
+            _client = client;
         }
 
         public void ClearClient()
         {
-            client = null;
+            _client = null;
         }
     }
 }

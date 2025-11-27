@@ -11,7 +11,8 @@ namespace AutoBlockList.Services.interfaces
 		string[] GetMacroStrings(string content);
 		Dictionary<string, object> GetParametersFromMaco(string macroString);
 		bool HasMacro(string content);
-		ContentType ConvertMacroToContentType(IMacro macro, out List<ConvertReport> reports);
+		bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null);
+		ContentType ConvertMacroToContentType(IMacro macro);
 		ConvertReport CreatePartialView(IMacro macro);
 		RichTextEditorValue ReplaceMacroWithBlockList(string macroString, Dictionary<string, object> parameters, RichTextConfigurationEditor configEditor, IDataType dataType, ContentType contentType, RichTextEditorValue richTextEditorValue);
 	}

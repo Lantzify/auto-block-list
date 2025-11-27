@@ -4,25 +4,30 @@ using AutoBlockList.Dtos;
 using Umbraco.Extensions;
 using Umbraco.Cms.Core.IO;
 using Newtonsoft.Json.Linq;
-using Umbraco.Cms.Core.Models;
 using AutoBlockList.Constants;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Umbraco.Cms.Core.Models.Blocks;
+using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.PropertyEditors;
-using static Umbraco.Cms.Core.Constants;
 using AutoBlockList.Services.interfaces;
+using static Umbraco.Cms.Core.Constants;
 using static Umbraco.Cms.Core.PropertyEditors.RichTextConfiguration;
 
 namespace AutoBlockList.Services
 {
 	public class AutoBlockListMacroService : IAutoBlockListMacroService
 	{
+		private readonly ILogger<AutoBlockListMacroService> _logger;
 		private readonly FileSystems _fileSystem;
 		private readonly IFileService _fileService;
-		private readonly IAutoBlockListContext _context;
+		private readonly IMacroService _macroService;
+		private readonly IJsonSerializer _jsonSerializer;
+		private readonly IAutoBlockListContext _hubContext;
 		private readonly IDataTypeService _dataTypeService;
 		private readonly IShortStringHelper _shortStringHelper;
 		private readonly IContentTypeService _contentTypeService;
@@ -39,17 +44,23 @@ namespace AutoBlockList.Services
 			RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
 
-		public AutoBlockListMacroService(FileSystems fileSystem,
+		public AutoBlockListMacroService(ILogger<AutoBlockListMacroService> logger,
+			FileSystems fileSystem,
 			IFileService fileService,
-			IAutoBlockListContext context,
+			IMacroService macroService,
+			IJsonSerializer jsonSerializer,
+			IAutoBlockListContext hubContext,
 			IDataTypeService dataTypeService,
 			IShortStringHelper shortStringHelper,
 			IContentTypeService contentTypeService,
 			IOptions<AutoBlockListSettings> autoBlockListSettings)
 		{
+			_logger = logger;
 			_fileSystem = fileSystem;
 			_fileService = fileService;
-			_context = context;
+			_jsonSerializer = jsonSerializer;
+			_macroService = macroService;
+			_hubContext = hubContext;
 			_dataTypeService = dataTypeService;
 			_shortStringHelper = shortStringHelper;
 			_contentTypeService = contentTypeService;
@@ -74,7 +85,6 @@ namespace AutoBlockList.Services
 
 		public Dictionary<string, object> GetParametersFromMaco(string macroString)
 		{
-			_context.Client.Done("failed");
 			var parameters = new Dictionary<string, object>();
 
 			if (string.IsNullOrEmpty(macroString))
@@ -96,11 +106,102 @@ namespace AutoBlockList.Services
 			return parameters;
 		}
 
-
-		public ContentType ConvertMacroToContentType(IMacro macro, out List<ConvertReport> reports)
+		public bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null)
 		{
-			reports = new List<ConvertReport>();
+			var tinyMceContent = content.GetValue<string>(tinyMceDataType.Alias, culture);
 
+			var macroStringReport = new ConvertReport
+			{
+				Status = AutoBlockListConstants.Status.Success
+			};
+
+			bool hasChanges = false;
+
+			if (string.IsNullOrEmpty(tinyMceContent) || !HasMacro(tinyMceContent))
+				return hasChanges;
+
+			try
+			{
+				RichTextPropertyEditorHelper.TryParseRichTextEditorValue(tinyMceContent, _jsonSerializer, _logger, out var richTextEditorValue);
+				var macros = GetMacroStrings(richTextEditorValue.Markup);
+
+				foreach (var macroString in macros)
+				{
+					macroStringReport.Task = $"Converting macro: '{macroString}' to document type {(!string.IsNullOrEmpty(culture) ? $"with culture:{culture}" : "")}";
+
+					_hubContext.Client?.CurrentTask(macroStringReport.Task);
+
+					var parameters = GetParametersFromMaco(macroString);
+					if (string.IsNullOrEmpty(parameters["macroAlias"].ToString()))
+					{
+						macroStringReport.ErrorMessage = "Macro alias parameter is missing.";
+						_hubContext.Client?.AddReport(macroStringReport);
+						continue;
+					}
+
+					var macro = _macroService.GetByAlias(parameters["macroAlias"]?.ToString() ?? "");
+					if (macro == null)
+					{
+						macroStringReport.ErrorMessage = $"Macro with alias '{parameters["macroAlias"]}' not found.";
+						_hubContext.Client?.AddReport(macroStringReport);
+						continue;
+					}
+
+					var contentType = ConvertMacroToContentType(macro);
+					if (contentType == null)
+					{
+						macroStringReport.ErrorMessage = $"Failed to convert macro '{macro.Name}' to content type.";
+						_hubContext.Client?.AddReport(macroStringReport);
+						continue;
+					}
+
+					macroStringReport.Status = AutoBlockListConstants.Status.Success;
+					_hubContext.Client?.AddReport(macroStringReport);
+
+
+
+					var dataConvertReport = new ConvertReport
+					{
+						Task = $"Converting macro to block list: '{contentType.Name}' for culture: '{culture}'",
+						Status = AutoBlockListConstants.Status.Success
+					};
+
+					_hubContext.Client?.CurrentTask(dataConvertReport.Task);
+
+					var dataType = _dataTypeService.GetDataType(tinyMceDataType.DataTypeId);
+					if (dataType?.Editor?.GetConfigurationEditor() is not RichTextConfigurationEditor configEditor)
+					{
+						dataConvertReport.Status = AutoBlockListConstants.Status.Failed;
+						_hubContext.Client?.AddReport(dataConvertReport);
+						continue;
+					}
+
+					_hubContext.Client?.AddReport(dataConvertReport);
+
+					richTextEditorValue = ReplaceMacroWithBlockList(macroString, parameters, configEditor, dataType, contentType, richTextEditorValue);
+					hasChanges = true;
+
+					var createPartialViewReport = CreatePartialView(macro);
+					_hubContext.Client?.AddReport(createPartialViewReport);
+				}
+
+				if (hasChanges)
+					content.SetValue(tinyMceDataType.Alias, RichTextPropertyEditorHelper.SerializeRichTextEditorValue(richTextEditorValue, _jsonSerializer), culture);
+
+				return hasChanges;
+			}
+			catch (Exception ex)
+			{
+				macroStringReport.Status = AutoBlockListConstants.Status.Failed;
+				macroStringReport.ErrorMessage = ex.Message;
+				_hubContext.Client?.AddReport(macroStringReport);
+				_logger.LogError(ex, "Error processing content for macro conversion: {Message}", ex.Message);
+				return hasChanges;
+			}
+		}
+
+		public ContentType ConvertMacroToContentType(IMacro macro)
+		{
 			string folderName = GetFolderNameForContentTypes();
 			_contentTypeService.GetContainer(-1);
 			var existingContainer = _contentTypeService.GetContainer(AutoBlockListConstants.ContentTypeFolderGuid);
@@ -108,76 +209,84 @@ namespace AutoBlockList.Services
 
 			if (existingContainer == null)
 			{
-				var existingFolders = new ConvertReport
-				{
-					Task = $"Creating folder '{folderName}'",
-					Status = AutoBlockListConstants.Status.Skipped
-				};
-
 				var attempt = _contentTypeService.CreateContainer(-1, AutoBlockListConstants.ContentTypeFolderGuid, folderName);
 				if (attempt.Success)
-				{
 					existingId = attempt.Result.Entity.Id;
-					existingFolders.Status = AutoBlockListConstants.Status.Success;
-				}
-
-				reports.Add(existingFolders);
 			}
 
 			var contentTypeReport = new ConvertReport
 			{
 				Task = $"Creating document type for macro '{macro.Name}'",
-				Status = AutoBlockListConstants.Status.Skipped
+				Status = AutoBlockListConstants.Status.Failed
 			};
 
-			var alreadyExists = TryGetContentTypeByAlias(macro.Alias, out string newAlias);
-
-			if (alreadyExists != null)
+			try
 			{
-				reports.Add(contentTypeReport);
-				return alreadyExists;
-			}
-
-			ContentType contentType = new ContentType(_shortStringHelper, existingId)
-			{
-				Alias = !string.IsNullOrEmpty(newAlias) ? newAlias : macro.Alias,
-				Name = macro.Name,
-				Icon = "icon-settings-alt",
-				IsElement = true,	
-			
-			};
-
-			var parametersGroup = new PropertyGroup(new PropertyTypeCollection(contentType.SupportsPublishing))
-			{
-				Alias = "parameters",
-				Name = "Parameters",
-				Type = PropertyGroupType.Tab,
-				SortOrder = 0,
-			};
-
-			contentType.PropertyGroups.Add(parametersGroup);
-
-			foreach (var property in macro.Properties)
-			{
-				var dataTypes = _dataTypeService.GetByEditorAlias(property.EditorAlias);
-
-				if (dataTypes == null || !dataTypes.Any())
-					continue;
-
-
-				parametersGroup.PropertyTypes.Add(new PropertyType(_shortStringHelper, dataTypes.FirstOrDefault())
+				var alreadyExists = TryGetContentTypeByAlias(macro.Alias, out string newAlias);
+				if (alreadyExists != null)
 				{
-					Alias = property.Alias,
-					Name = property.Name,
-					
-				});
+					contentTypeReport.Status = AutoBlockListConstants.Status.Skipped;
+					_hubContext.Client?.AddReport(contentTypeReport);
+
+					return alreadyExists;
+				}
+
+				ContentType contentType = new ContentType(_shortStringHelper, existingId)
+				{
+					Alias = !string.IsNullOrEmpty(newAlias) ? newAlias : macro.Alias,
+					Name = macro.Name,
+					Icon = "icon-settings-alt",
+					IsElement = true,
+
+				};
+
+				var parametersGroup = new PropertyGroup(new PropertyTypeCollection(contentType.SupportsPublishing))
+				{
+					Alias = "parameters",
+					Name = "Parameters",
+					Type = PropertyGroupType.Tab,
+					SortOrder = 0,
+				};
+
+				contentType.PropertyGroups.Add(parametersGroup);
+
+
+				foreach (var property in macro.Properties)
+				{
+					var dataTypes = _dataTypeService.GetByEditorAlias(property.EditorAlias);
+
+					if (dataTypes == null || !dataTypes.Any())
+					{
+						_hubContext.Client?.AddReport(new ConvertReport()
+						{
+							Task = $"Skipping property '{property.Name}' for macro '{macro.Name}' - No matching data type found for editor alias '{property.EditorAlias}'",
+							Status = AutoBlockListConstants.Status.Skipped
+						});
+
+						continue;
+					}
+
+					parametersGroup.PropertyTypes.Add(new PropertyType(_shortStringHelper, dataTypes.FirstOrDefault())
+					{
+						Alias = property.Alias,
+						Name = property.Name,
+
+					});
+				}
+
+				_contentTypeService.Save(contentType);
+
+				contentTypeReport.Status = AutoBlockListConstants.Status.Success;
+				_hubContext.Client?.AddReport(contentTypeReport);
+
+				return contentType;
 			}
-		
-			_contentTypeService.Save(contentType);
-
-			reports.Add(contentTypeReport);
-
-			return contentType;
+			catch (Exception ex)
+			{
+				_hubContext.Client?.AddReport(contentTypeReport);
+				_logger.LogError(ex, "Error converting macro to content type: {Message}", ex.Message);
+				return null;
+			}
 		}
 
 		private ContentType TryGetContentTypeByAlias(string alias, out string newAlias)
@@ -268,7 +377,7 @@ namespace AutoBlockList.Services
 				Status = AutoBlockListConstants.Status.Skipped
 			};
 
-			string macroPartialView = macro.Alias + ".cshtml";
+			string macroPartialView = macro.Name + ".cshtml";
 			var partialViews = _fileSystem.PartialViewsFileSystem.GetFiles(_partialViewDirectory);
 
 			if (!partialViews.Any(x => x.Contains(macroPartialView)))

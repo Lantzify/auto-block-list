@@ -59,6 +59,7 @@ If you would like to help me improve this package, feel free to create a pull re
 If you find any issues with the package feel free to raise an issue!
 
 ## Screenshots
+![Macro demo](assets/macroDemo.gif "Demo")
 ![Demo](assets/demo.gif "Demo")
 ![Dashboard](assets/dashboard.PNG "Dashboard")
 ![Select](assets/select.PNG "Select")
