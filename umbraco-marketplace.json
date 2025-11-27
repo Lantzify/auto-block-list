@@ -20,10 +20,6 @@
     ],
     "Screenshots": [
         {
-            "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/macroDemo.gif",
-            "Caption": "Short macro demo"
-        },
-        {
             "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/demo.gif",
             "Caption": "Short demo"
         },

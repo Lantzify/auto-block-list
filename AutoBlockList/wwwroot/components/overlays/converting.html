@@ -2,17 +2,12 @@
 
      <div ng-if="!vm.showReport">
 
-         <div class="flex justify-between" ng-if="model.convertType == 'NC'">
+         <div class="flex justify-between">
              <umb-icon style=" height: 7rem; width: 7rem;" icon="icon-settings-alt" ng-class="{'o-30' : vm.task != 'dataTypes'}"></umb-icon>
              <umb-icon style=" height: 7rem; width: 7rem;" icon="icon-sience" ng-class="{'o-30' : vm.task != 'contentTypes'}"></umb-icon>
              <umb-icon style=" height: 7rem; width: 7rem;" icon="icon-box-open" ng-class="{'o-30' : vm.task != 'content'}"></umb-icon>
+
          </div>
-
-         <div class="flex justify-center" ng-if="model.convertType != 'NC'">
-             <umb-icon style=" height: 7rem; width: 7rem;" icon="icon-settings-alt"></umb-icon>
-         </div>
-
-
 
          <umb-loader class="mt3" style="position:relative;"></umb-loader>
 
