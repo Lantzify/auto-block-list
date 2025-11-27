@@ -5,9 +5,7 @@
 Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content and macros into block list components. In addition, it transfers the content to the new block list format.
 
 ## About
-With the removal of nested content in Umbraco 13 and macros in Umbraco 14, upgrading can potentially be challenging if you use these features frequently. That's where Auto block list comes in. With one click, AutoBlockList runs the following workflow based on data type.
-
-### Nested Content Conversion
+With the removal of nested content in Umbraco 13. Upgrading can potentially be challenging if you use it frequently. That's where Auto block list comes in. With one click AutoBlockLists runs the following workflow.
 - Creates the block list data type based on the old nested content data type.
 - Adds the new data type to the document type.
 - Transfers the existing content to the newly created block list.
