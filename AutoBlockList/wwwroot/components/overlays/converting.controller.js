@@ -22,7 +22,7 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         connection.start().then(function () {
             $http({
                 method: "POST",
-                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert",
+                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert" + $scope.model.convertType,
                 data: {
                     Contents: $scope.model.content,
                     ConnectionId: connection.connectionId
@@ -38,42 +38,56 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
 
         connection.on("AddReport", function (report) {
             vm.report.push(report);
+            $scope.$apply();
         });
 
         connection.on("CurrentTask", function (task) {
             vm.currentTask = task;
+            $scope.$apply();
         });
 
         connection.on("UpdateStep", function (task) {
             vm.task = task;
+            $scope.$apply();
         });
 
         connection.on("UpdateItem", function (item) {
             vm.item = item;
+            $scope.$apply();
         });
 
-        connection.on("UpdateTitle", function (item) {
+        connection.on("SetTitle", function (item) {
             setTitle(item);
+            $scope.$apply();
         });
 
-        connection.on("UpdateSubTitle", function (item) {
+        connection.on("SetSubTitle", function (item) {
             setSubTitle(item);
+            $scope.$apply();
         });
 
         connection.on("Done", function (item) {
-            vm.showReport = true;
             setSubTitle(item);
 
             if (item === $scope.model.content.length) {
+                vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
                 notificationsService.success("Auto block list", "successfully converted everything.")
+            } else if (item == "failed") {
+                vm.showReport = true;
+                $scope.model.disableSubmitButton = false;
+                document.body.classList.add("hideClose");
+                notificationsService.error("Auto block list", "failed to converted everything.")
             }
+
+            $scope.$apply();
         });
     });
 
     function setTitle(item) {
         $scope.model.title = "Converting '" + item + "'";
+       
     };
 
     function setSubTitle(item) {

@@ -1,26 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<StaticWebAssetBasePath>App_Plugins/AutoBlockList</StaticWebAssetBasePath>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.0.1" />
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.0.0" />
 	</ItemGroup>
 
 	<PropertyGroup>
 		<PackageId>AutoBlockList</PackageId>
-		<Version>1.0.0</Version>
+		<Version>2.0.0</Version>
 		<Title>Auto block list</Title>
 		<Authors>Lantzify</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/Lantzify/auto-block-list</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Lantzify/auto-block-list</RepositoryUrl>
-		<Description>Auto block list is made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format.</Description>
-		<Summary>Auto block list is made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format. </Summary>
+		<Description>Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content and macros into block list components. In addition, it transfers the content to the new block list format.</Description>
+		<Summary>Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content and macros into block list components. In addition, it transfers the content to the new block list format.</Summary>
 		<PackageTags>umbraco package umbraco-marketplace</PackageTags>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols>true</IncludeSymbols>

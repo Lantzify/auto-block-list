@@ -8,7 +8,7 @@ namespace AutoBlockList.Backoffice
         {
             manifests.Add(new PackageManifest
             {
-                PackageName = "DataBlockConverter",
+                PackageName = "AutoBlockList",
                 Scripts = new[]
                 {
                     "/App_Plugins/AutoBlockList/backoffice/autoBlockList/overview.controller.js",
