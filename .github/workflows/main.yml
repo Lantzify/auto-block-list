@@ -14,4 +14,4 @@ jobs:
       - name: Package files
         run: dotnet pack --configuration Release  AutoBlockList /p:Version=${{github.ref_name}}
       - name: Publish the package
-        run: dotnet nuget push AutoBlockList/build/Release/AutoBlockList.${{github.ref_name}}.nupkg --source https://api.nuget.org/v3/index.json  ${{secrets.PRIVATE_NUGET_KEY }}
+        run: dotnet nuget push AutoBlockList/build/Release/AutoBlockList.${{github.ref_name}}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{secrets.PRIVATE_NUGET_KEY }}
