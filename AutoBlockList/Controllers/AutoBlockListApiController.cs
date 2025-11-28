@@ -124,6 +124,8 @@ namespace AutoBlockList.Controllers
 			if (!tinyMcePropertyTypeIds.Any())
 				return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
 
+			tinyMcePropertyTypeIds = tinyMcePropertyTypeIds.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
 			using (var scope = _scopeProvider.CreateScope())
 			{
 				Page<ContentWithMacroInfo> pagedResult = _runtimeCache.GetCacheItem(string.Format(AutoBlockListConstants.TinyMCECacheKey_Page, page), () =>

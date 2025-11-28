@@ -32,8 +32,8 @@ FROM
     INNER JOIN cmsPropertyType AS pt
     INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
 WHERE
-    (d.published = 1 OR d.edited = 1) 
-    AND n.trashed = 0 
+    n.trashed = 0 
+    AND (d.published = 1 OR d.edited = 1) 
     AND pt.Alias IN (@propertyTypeIds)
     AND (
         pd.textValue LIKE '%UMBRACO_MACRO%' OR
