@@ -2,6 +2,9 @@
 ![Version](https://img.shields.io/nuget/v/AutoBlockList?label=version)
 [![Nuget](https://img.shields.io/nuget/dt/AutoBlockList?color=2346c018&logo=Nuget)](https://www.nuget.org/packages/AutoBlockList/)
 
+> [!NOTE]  
+> 2.0.0 introduced the ability to convert macros!
+
 Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content and macros into block list components. In addition, it transfers the content to the new block list format.
 
 ## About
