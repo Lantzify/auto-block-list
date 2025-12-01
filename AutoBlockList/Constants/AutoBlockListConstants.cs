@@ -19,17 +19,17 @@
 		public const string SQL_WITH_MACRO_INFO = @"
 SELECT
     n.id AS NodeId,
-    CASE 
+    MAX(CASE 
         WHEN pd.textValue LIKE '%UMBRACO_MACRO%'
         THEN 1 
         ELSE 0 
-    END AS HasMacro
+    END) AS HasMacro
 FROM
     umbracoNode AS n 
     INNER JOIN umbracoDocument AS d ON d.nodeId = n.id 
     INNER JOIN umbracoContent AS c ON c.nodeId = n.id 
     INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.[current] = 1 
-    INNER JOIN cmsPropertyType AS pt
+    INNER JOIN cmsPropertyType AS pt ON pt.id = pd.propertyTypeId
     INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
 WHERE
     n.trashed = 0 
@@ -39,6 +39,8 @@ WHERE
         pd.textValue LIKE '%UMBRACO_MACRO%' OR
         pd.textValue LIKE '%umb-rte-block%'
      )
+GROUP BY 
+    n.id
 ORDER BY
     n.id ASC";
 
