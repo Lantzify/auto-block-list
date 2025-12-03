@@ -19,7 +19,7 @@ namespace AutoBlockList.Notifications
 			if (notification.Changes.Any(x => x.Item.PropertyTypes.Any(p => p.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent || p.PropertyEditorAlias == PropertyEditors.Aliases.BlockList)))
 				_runtimeCache.Clear(AutoBlockListConstants.CacheKey);
 
-            if(notification.Changes.Any(x => x.Item.PropertyTypes.Any(p => p.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)))
+            if(notification.Changes.Any(x => x.Item.PropertyTypes.Any(p => AutoBlockListConstants.RichTextEditor_And_BlockListAlias.Contains(p.PropertyEditorAlias))))
                 _runtimeCache.Clear(AutoBlockListConstants.TinyMCECacheKey);            
         }
     }

@@ -1,4 +1,6 @@
 ﻿using NPoco;
+using System.Linq;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using AutoBlockList.Hubs;
@@ -9,8 +11,11 @@ using Umbraco.Cms.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Services;
+using AutoBlockList.Dtos.BlockList;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core.Models.Blocks;
+using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using Umbraco.Cms.Web.Common.Attributes;
 using static Umbraco.Cms.Core.Constants;
@@ -18,6 +23,7 @@ using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.Cms.Web.Common.Authorization;
+using System.ComponentModel.DataAnnotations;
 using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 
@@ -102,7 +108,7 @@ namespace AutoBlockList.Controllers
 			var contentTypes = _runtimeCache.GetCacheItem(AutoBlockListConstants.TinyMCECacheKey, () =>
 			{
 				var contentTypes = GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.TinyMce).ToList();
-				//contentTypes.AddRange(GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.BlockList));
+				contentTypes.AddRange(GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.BlockList));
 
 				return contentTypes != null && contentTypes.Any() ? contentTypes : null;
 			});
@@ -117,7 +123,7 @@ namespace AutoBlockList.Controllers
 			foreach (var contentTypeId in contentTypesIds)
 			{
 				var contentType = _contentTypeService.Get(contentTypeId);
-				var tinyMceProperties = contentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce);
+				var tinyMceProperties = contentType.PropertyTypes.Where(x => AutoBlockListConstants.RichTextEditor_And_BlockListAlias.Contains(x.PropertyEditorAlias));
 				tinyMcePropertyTypeIds.AddRange(tinyMceProperties.Select(p => p.Alias));
 			}
 
@@ -194,9 +200,11 @@ namespace AutoBlockList.Controllers
 
 					bool shouldSave = false;		
 
-					var tinyMceDataTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce).ToList();
-					tinyMceDataTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce));
-					foreach (var tinyMceDataType in tinyMceDataTypes)
+					var tinyMcePropertyTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce).ToList();
+					tinyMcePropertyTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce));
+					tinyMcePropertyTypes.DistinctBy(x => x.Key);
+
+					foreach (var tinyMceDataType in tinyMcePropertyTypestinyMcePropertyTypes)
 					{
 						var tinyMceDataTypeReport = new ConvertReport()
 						{
@@ -221,6 +229,70 @@ namespace AutoBlockList.Controllers
 								shouldSave = true;
 						}
 					}
+
+					var blockListPropertyTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList).ToList();
+					blockListPropertyTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList));
+
+					var contentTypes = _runtimeCache.GetCacheItem<IEnumerable<CustomContentTypeReferences>>(AutoBlockListConstants.TinyMCECacheKey);
+					var contentTypeAliases = contentTypes.Select(x => x.Alias);
+					var contentTypeKeys = contentTypes.Select(s => s.Key);
+
+					//THIS IS PROPERTY
+					foreach (var blockListPropertyType in blockListPropertyTypes)
+					{
+						bool hasChanges = false;
+
+						var dataType = _dataTypeService.GetDataType(blockListPropertyType.DataTypeId);
+						var blockListConfig = dataType.Configuration as BlockListConfiguration;
+						
+
+						var stringValue = content.GetValue<string>(blockListPropertyType.Alias);
+						var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
+
+						if(blockList == null)
+							continue;
+
+						var contentBlocksWithRte = blockList.contentData.Where(x => contentTypeKeys.Contains(Guid.Parse(x.GetValue("contentTypeKey"))));
+
+						foreach (var contentBlock in contentBlocksWithRte)
+						{
+							Guid contentTypeKey = Guid.Parse(contentBlock.GetValue("contentTypeKey"));
+
+							var contentTypeWithRichTextEditor = _contentTypeService.Get(contentTypeKey);
+							var tinyMceProperies = contentTypeWithRichTextEditor.PropertyTypes.ToList();
+							tinyMceProperies.AddRange(contentTypeWithRichTextEditor.CompositionPropertyTypes);
+
+							var aliases = tinyMceProperies.Select(x => x.Alias);
+
+							var rawPropertyValues = contentBlock.Where(x => aliases.Contains(x.Key));
+
+							foreach (var rawPropertyValue in rawPropertyValues)
+							{
+								var tinyMceProperty = tinyMceProperies.FirstOrDefault(x => x.Alias == rawPropertyValue.Key);
+
+								if (tinyMceProperty == null)
+									continue;
+
+								var updatedValue = _autoBlockListMacroService.ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty);
+
+
+								if (string.IsNullOrEmpty(updatedValue))
+									continue;
+
+								hasChanges = true;
+								contentBlock[rawPropertyValue.Key] = updatedValue;
+							}
+						}
+
+		
+						if (hasChanges)
+						{
+							shouldSave = true;
+							content.SetValue(blockListPropertyType.Alias, JsonConvert.SerializeObject(blockList));
+						}
+							
+					}
+
 
 					if (!shouldSave)
 					{
