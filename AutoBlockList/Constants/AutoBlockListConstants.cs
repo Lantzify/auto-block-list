@@ -29,8 +29,8 @@ FROM
     INNER JOIN umbracoDocument AS d ON d.nodeId = n.id 
     INNER JOIN umbracoContent AS c ON c.nodeId = n.id 
     INNER JOIN umbracoContentVersion AS cv ON cv.nodeId = n.id AND cv.[current] = 1 
-    INNER JOIN cmsPropertyType AS pt ON pt.id = pd.propertyTypeId
-    INNER JOIN umbracoPropertyData AS pd ON pd.propertyTypeId = pt.id AND pd.versionId = cv.id
+	INNER JOIN umbracoPropertyData AS pd ON pd.versionId = cv.id
+	INNER JOIN cmsPropertyType AS pt ON pt.id = pd.propertyTypeId
 WHERE
     n.trashed = 0 
     AND (d.published = 1 OR d.edited = 1) 
