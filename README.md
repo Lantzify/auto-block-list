@@ -1,6 +1,7 @@
 # Auto block list
 ![Version](https://img.shields.io/nuget/v/AutoBlockList?label=version)
 [![Nuget](https://img.shields.io/nuget/dt/AutoBlockList?color=2346c018&logo=Nuget)](https://www.nuget.org/packages/AutoBlockList/)
+[![Umbraco](https://img.shields.io/badge/marketplace-umbraco-283a97)](https://marketplace.umbraco.com/package/autoblocklist)
 
 > [!NOTE]  
 > 2.0.0 introduced the ability to convert macros!
