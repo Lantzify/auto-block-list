@@ -1,4 +1,6 @@
-﻿namespace AutoBlockList.Constants
+﻿using static Umbraco.Cms.Core.Constants;
+
+namespace AutoBlockList.Constants
 {
     public static class AutoBlockListConstants
     {
@@ -15,6 +17,12 @@
             "PropType",
             "key"
         };
+
+        public static readonly string[] RichTextEditor_And_BlockListAlias = {
+
+		    PropertyEditors.Aliases.TinyMce,
+		    PropertyEditors.Aliases.BlockList
+	    };
 
 		public const string SQL_WITH_MACRO_INFO = @"
 SELECT

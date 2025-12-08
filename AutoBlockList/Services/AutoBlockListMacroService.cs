@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using Umbraco.Extensions;
@@ -8,11 +9,14 @@ using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
+using CSharpTest.Net.Collections;
+using AutoBlockList.Dtos.BlockList;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
+using Microsoft.Extensions.Primitives;
 using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using static Umbraco.Cms.Core.Constants;
@@ -106,19 +110,15 @@ namespace AutoBlockList.Services
 			return parameters;
 		}
 
-		public bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null)
+		public string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string culture = null)
 		{
-			var tinyMceContent = content.GetValue<string>(tinyMceDataType.Alias, culture);
-
 			var macroStringReport = new ConvertReport
 			{
 				Status = AutoBlockListConstants.Status.Success
 			};
 
-			bool hasChanges = false;
-
 			if (string.IsNullOrEmpty(tinyMceContent) || !HasMacro(tinyMceContent))
-				return hasChanges;
+				return string.Empty;
 
 			try
 			{
@@ -179,15 +179,101 @@ namespace AutoBlockList.Services
 					_hubContext.Client?.AddReport(dataConvertReport);
 
 					richTextEditorValue = ReplaceMacroWithBlockList(macroString, parameters, configEditor, dataType, contentType, richTextEditorValue);
-					hasChanges = true;
 
 					var createPartialViewReport = CreatePartialView(macro);
 					_hubContext.Client?.AddReport(createPartialViewReport);
 				}
 
-				if (hasChanges)
-					content.SetValue(tinyMceDataType.Alias, RichTextPropertyEditorHelper.SerializeRichTextEditorValue(richTextEditorValue, _jsonSerializer), culture);
+				return RichTextPropertyEditorHelper.SerializeRichTextEditorValue(richTextEditorValue, _jsonSerializer);
+			}
+			catch (Exception ex)
+			{
+				macroStringReport.Status = AutoBlockListConstants.Status.Failed;
+				macroStringReport.ErrorMessage = ex.Message;
+				_hubContext.Client?.AddReport(macroStringReport);
+				_logger.LogError(ex, "Error processing content for macro conversion: {Message}", ex.Message);
+				return string.Empty;
+			}
+		}
 
+		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys)
+		{
+			var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
+			if (blockList == null)
+				return string.Empty;
+
+			var contentBlocksWithRte = blockList.contentData.Where(x => contentTypeKeys.Contains(Guid.Parse(x.GetValue("contentTypeKey"))));
+			foreach (var contentBlock in contentBlocksWithRte)
+			{
+				if (!contentBlock.TryGetValue("contentTypeKey", out string contentTypeKeyString))
+				{
+					continue;
+				}
+
+				Guid contentTypeKey = Guid.Parse(contentTypeKeyString);
+				var contentTypeWithRichTextEditor = _contentTypeService.Get(contentTypeKey);
+
+				if (contentTypeWithRichTextEditor == null)
+					continue;
+
+				var tinyMceProperies = contentTypeWithRichTextEditor.PropertyTypes.ToList();
+				tinyMceProperies.AddRange(contentTypeWithRichTextEditor.CompositionPropertyTypes);
+
+				var aliases = tinyMceProperies.Select(x => x.Alias);
+
+				var rawPropertyValues = contentBlock.Where(x => aliases.Contains(x.Key));
+				foreach (var rawPropertyValue in rawPropertyValues)
+				{
+					var tinyMceProperty = tinyMceProperies.FirstOrDefault(x => x.Alias == rawPropertyValue.Key);
+
+					if (tinyMceProperty == null)
+						continue;
+
+					if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockList)
+					{
+						var nestedBlocklist = ProcessBlockListValues(rawPropertyValue.Value, contentTypeKeys);
+						if (!string.IsNullOrEmpty(nestedBlocklist) && nestedBlocklist != contentBlock[rawPropertyValue.Key])
+							contentBlock[rawPropertyValue.Key] = nestedBlocklist;
+					}
+					else if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)
+					{
+						var updatedValue = ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty);
+
+						if (string.IsNullOrEmpty(updatedValue))
+							continue;
+
+						contentBlock[rawPropertyValue.Key] = updatedValue;
+					}
+				}
+			}
+
+			return JsonConvert.SerializeObject(blockList);
+		}
+
+		public bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null)
+		{
+			var tinyMceContent = content.GetValue<string>(tinyMceDataType.Alias, culture);
+
+			var macroStringReport = new ConvertReport
+			{
+				Status = AutoBlockListConstants.Status.Success
+			};
+
+			bool hasChanges = false;
+
+			if (string.IsNullOrEmpty(tinyMceContent) || !HasMacro(tinyMceContent))
+				return hasChanges;
+
+			try
+			{
+				var newRichTextEditorValue = ProcessTinyMceContentForMacroConversion(tinyMceContent, tinyMceDataType, culture);
+
+				if (!string.IsNullOrEmpty(newRichTextEditorValue)) 
+				{
+					hasChanges = true;
+					content.SetValue(tinyMceDataType.Alias, newRichTextEditorValue, culture);
+				}
+					
 				return hasChanges;
 			}
 			catch (Exception ex)
@@ -196,7 +282,7 @@ namespace AutoBlockList.Services
 				macroStringReport.ErrorMessage = ex.Message;
 				_hubContext.Client?.AddReport(macroStringReport);
 				_logger.LogError(ex, "Error processing content for macro conversion: {Message}", ex.Message);
-				return hasChanges;
+				return false;
 			}
 		}
 
