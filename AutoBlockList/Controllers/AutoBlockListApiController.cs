@@ -241,18 +241,18 @@ namespace AutoBlockList.Controllers
 
 						foreach (var blockListPropertyType in blockListPropertyTypes)
 						{
-							var tinyMceDataTypeReport = new ConvertReport()
+							var blocklistDataTypeReport = new ConvertReport()
 							{
 								Task = $"Checking for macros in block list with name: '{blockListPropertyType.Name}'",
 							};
 
-							client.CurrentTask(tinyMceDataTypeReport.Task);
+							client.CurrentTask(blocklistDataTypeReport.Task);
 
 							if (blockListPropertyType.VariesByCulture())
 							{
 								foreach (var culture in content.AvailableCultures)
 								{
-									tinyMceDataTypeReport.Task += $" for culture: '{culture}'";
+									blocklistDataTypeReport.Task += $" for culture: '{culture}'";
 
 									var dataType = _dataTypeService.GetDataType(blockListPropertyType.DataTypeId);
 									var blockListConfig = dataType.Configuration as BlockListConfiguration;
