@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using Umbraco.Extensions;
@@ -8,15 +9,17 @@ using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
+using CSharpTest.Net.Collections;
+using AutoBlockList.Dtos.BlockList;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
+using Microsoft.Extensions.Primitives;
 using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using static Umbraco.Cms.Core.Constants;
-using static Umbraco.Cms.Core.Constants.Conventions;
 using static Umbraco.Cms.Core.PropertyEditors.RichTextConfiguration;
 
 namespace AutoBlockList.Services
@@ -191,6 +194,60 @@ namespace AutoBlockList.Services
 				_logger.LogError(ex, "Error processing content for macro conversion: {Message}", ex.Message);
 				return string.Empty;
 			}
+		}
+
+		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys)
+		{
+			var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
+			if (blockList == null)
+				return string.Empty;
+
+			var contentBlocksWithRte = blockList.contentData.Where(x => contentTypeKeys.Contains(Guid.Parse(x.GetValue("contentTypeKey"))));
+			foreach (var contentBlock in contentBlocksWithRte)
+			{
+				if (!contentBlock.TryGetValue("contentTypeKey", out string contentTypeKeyString))
+				{
+					continue;
+				}
+
+				Guid contentTypeKey = Guid.Parse(contentTypeKeyString);
+				var contentTypeWithRichTextEditor = _contentTypeService.Get(contentTypeKey);
+
+				if (contentTypeWithRichTextEditor == null)
+					continue;
+
+				var tinyMceProperies = contentTypeWithRichTextEditor.PropertyTypes.ToList();
+				tinyMceProperies.AddRange(contentTypeWithRichTextEditor.CompositionPropertyTypes);
+
+				var aliases = tinyMceProperies.Select(x => x.Alias);
+
+				var rawPropertyValues = contentBlock.Where(x => aliases.Contains(x.Key));
+				foreach (var rawPropertyValue in rawPropertyValues)
+				{
+					var tinyMceProperty = tinyMceProperies.FirstOrDefault(x => x.Alias == rawPropertyValue.Key);
+
+					if (tinyMceProperty == null)
+						continue;
+
+					if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockList)
+					{
+						var nestedBlocklist = ProcessBlockListValues(rawPropertyValue.Value, contentTypeKeys);
+						if (!string.IsNullOrEmpty(nestedBlocklist) && nestedBlocklist != contentBlock[rawPropertyValue.Key])
+							contentBlock[rawPropertyValue.Key] = nestedBlocklist;
+					}
+					else if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)
+					{
+						var updatedValue = ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty);
+
+						if (string.IsNullOrEmpty(updatedValue))
+							continue;
+
+						contentBlock[rawPropertyValue.Key] = updatedValue;
+					}
+				}
+			}
+
+			return JsonConvert.SerializeObject(blockList);
 		}
 
 		public bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null)

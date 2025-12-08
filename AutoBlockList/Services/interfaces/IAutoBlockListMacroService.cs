@@ -11,6 +11,7 @@ namespace AutoBlockList.Services.interfaces
 		string[] GetMacroStrings(string content);
 		Dictionary<string, object> GetParametersFromMaco(string macroString);
 		bool HasMacro(string content);
+		string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys);
 		string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string culture = null);
 		bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null);
 		ContentType ConvertMacroToContentType(IMacro macro);
