@@ -18,7 +18,8 @@ namespace AutoBlockList.Composers
             builder.ManifestFilters().Append<AutoBlockListManifestFilter>();
 
             builder.AddNotificationHandler<ContentTypeChangedNotification, ContentTypeChangedClearCacheHandler>()
-                    .AddNotificationHandler<ContentSavedNotification, ContentSavedClearCacheHandler>();
+                    .AddNotificationHandler<ContentSavedNotification, ContentClearCacheHandler>()
+                    .AddNotificationHandler<ContentDeletedNotification, ContentClearCacheHandler>();
 
 			builder.Services.AddSingleton<IAutoBlockListHubClientFactory, AutoBlockListHubClientFactory>()
 							.AddScoped<IAutoBlockListContext, AutoBlockListContext>();
