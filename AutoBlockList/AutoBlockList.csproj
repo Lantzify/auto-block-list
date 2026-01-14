@@ -24,6 +24,7 @@
 		<PackageTags>umbraco package umbraco-marketplace</PackageTags>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols>true</IncludeSymbols>
+		<PackageReadmeFile>umbraco-marketplace-readme.md</PackageReadmeFile>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
 		<ContentTargetFolders>content</ContentTargetFolders>
@@ -31,5 +32,9 @@
 		<PackageOutputPath>build/Release</PackageOutputPath>
 
 	</PropertyGroup>
+
+		<ItemGroup>
+				<None Include="..\umbraco-marketplace-readme.md" Pack="true" PackagePath="\" />
+		</ItemGroup>
 
 </Project>
