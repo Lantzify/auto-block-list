@@ -5,6 +5,7 @@ using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using AutoBlockList.Hubs;
 using Umbraco.Extensions;
+using AutoBlockList.Services;
 using Umbraco.Cms.Core.Cache;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
@@ -136,7 +137,7 @@ namespace AutoBlockList.Controllers
 			{
 				Page<ContentWithMacroInfo> pagedResult = _runtimeCache.GetCacheItem(string.Format(AutoBlockListConstants.TinyMCECacheKey_Page, page), () =>
 				{
-					var pagedResult =  scope.Database.Page<ContentWithMacroInfo>(page, 15, AutoBlockListConstants.SQL_WITH_MACRO_INFO, new { propertyTypeIds = tinyMcePropertyTypeIds });
+					var pagedResult = scope.Database.Page<ContentWithMacroInfo>(page, 15, AutoBlockListConstants.SQL_WITH_MACRO_INFO, new { propertyTypeIds = tinyMcePropertyTypeIds });
 
 					return pagedResult.Items.Any() ? pagedResult : null;
 				});
@@ -181,13 +182,14 @@ namespace AutoBlockList.Controllers
 			var client = _autoBlockListHubClientFactory.CreateClient(dto.ConnectionId);
 			_autoBlockListContext.SetClient(client);
 
-			try
+			var index = 0;
+			foreach (var autoBlockListContent in dto.Contents)
 			{
-				foreach (var autoBlockListContent in dto.Contents)
+				try
 				{
 					var content = _contentService.GetById(autoBlockListContent.Id);
 					var fullContentType = _contentTypeService.Get(autoBlockListContent.ContentTypeKey);
-					var index = dto.Contents.FindIndex(x => x == autoBlockListContent);
+					index = dto.Contents.FindIndex(x => x == autoBlockListContent);
 
 					contentMacroReport = new ConvertReport()
 					{
@@ -198,7 +200,7 @@ namespace AutoBlockList.Controllers
 					client.SetSubTitle(index);
 					client.CurrentTask(contentMacroReport.Task);
 
-					bool shouldSave = false;		
+					bool shouldSave = false;
 
 					var tinyMcePropertyTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce).ToList();
 					tinyMcePropertyTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce));
@@ -258,7 +260,11 @@ namespace AutoBlockList.Controllers
 									var blockListConfig = dataType.Configuration as BlockListConfiguration;
 
 									var stringValue = content.GetValue<string>(blockListPropertyType.Alias, culture);
-									var processedBlocklistValue = _autoBlockListMacroService.ProcessBlockListValues(stringValue, contentTypeKeys);
+
+									if(string.IsNullOrWhiteSpace(stringValue))
+										continue;
+
+									var processedBlocklistValue = _autoBlockListMacroService.ProcessBlockListValues(stringValue, contentTypeKeys, culture);
 
 									if (processedBlocklistValue != stringValue)
 									{
@@ -294,7 +300,7 @@ namespace AutoBlockList.Controllers
 
 					if (_autoBlockListService.GetSaveAndPublishSetting())
 					{
-						client.CurrentTask("Saving and publishing node: " + content.Name); 
+						client.CurrentTask("Saving and publishing node: " + content.Name);
 						_contentService.SaveAndPublish(content);
 						client.AddReport(new ConvertReport()
 						{
@@ -315,17 +321,18 @@ namespace AutoBlockList.Controllers
 
 					client.AddReport(contentMacroReport);
 					client.Done(index + 1);
-				}	
-			}
-			catch (Exception ex)
-			{
-				contentMacroReport.Status = AutoBlockListConstants.Status.Failed;
-				client.AddReport(contentMacroReport);
-				client.Done("failed");
+				}
+				catch (Exception ex)
+				{
+					contentMacroReport.Status = AutoBlockListConstants.Status.Failed;
+					contentMacroReport.ErrorMessage = ex.Message;
+					client.AddReport(contentMacroReport);
+					client.Done(index + 1);
 
-				_logger.LogError(ex, $"Failed to: {contentMacroReport.Task}");
-				_autoBlockListContext.ClearClient();
-				return ValidationProblem(ex.Message);
+					_logger.LogError(ex, $"Failed to: {contentMacroReport.Task}");
+
+					continue;
+				}
 			}
 
 			_autoBlockListContext.ClearClient();
@@ -346,7 +353,7 @@ namespace AutoBlockList.Controllers
 			});
 
 			if (contentTypes == null || !contentTypes.Any())
-                return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
+				return new PagedResult<DisplayAutoBlockListContent>(0, 0, 0);
 
 			var contentTypesIds = contentTypes.Select(x => x.Id).ToList();
 			contentTypesIds.AddRange(_autoBlockListService.GetComposedOf(contentTypesIds));

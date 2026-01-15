@@ -110,7 +110,7 @@ namespace AutoBlockList.Services
 			return parameters;
 		}
 
-		public string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string culture = null)
+		public string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string? culture = null)
 		{
 			var macroStringReport = new ConvertReport
 			{
@@ -196,7 +196,7 @@ namespace AutoBlockList.Services
 			}
 		}
 
-		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys)
+		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys, string culture = null)
 		{
 			var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
 			if (blockList == null)
@@ -231,13 +231,13 @@ namespace AutoBlockList.Services
 
 					if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockList)
 					{
-						var nestedBlocklist = ProcessBlockListValues(rawPropertyValue.Value, contentTypeKeys);
+						var nestedBlocklist = ProcessBlockListValues(rawPropertyValue.Value, contentTypeKeys, culture);
 						if (!string.IsNullOrEmpty(nestedBlocklist) && nestedBlocklist != contentBlock[rawPropertyValue.Key])
 							contentBlock[rawPropertyValue.Key] = nestedBlocklist;
 					}
 					else if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)
 					{
-						var updatedValue = ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty);
+						var updatedValue = ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty, culture);
 
 						if (string.IsNullOrEmpty(updatedValue))
 							continue;
