@@ -162,7 +162,7 @@ namespace AutoBlockList.Services
 
 					var dataConvertReport = new ConvertReport
 					{
-						Task = $"Converting macro to block list: '{contentType.Name}' for culture: '{culture}'",
+						Task = $"Converting macro to block list: '{contentType.Name}' {(!string.IsNullOrEmpty(culture) ? $"for culture: '{culture}'" : "")}",
 						Status = AutoBlockListConstants.Status.Success
 					};
 
@@ -198,6 +198,9 @@ namespace AutoBlockList.Services
 
 		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys, string culture = null)
 		{
+			if (string.IsNullOrEmpty(stringValue))
+				return string.Empty;
+
 			var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
 			if (blockList == null)
 				return string.Empty;
