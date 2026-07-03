@@ -4,7 +4,7 @@ namespace AutoBlockList.Constants
 {
     public static class AutoBlockListConstants
     {
-        public const string CheckLogs = "Check logs for futher details";
+        public const string CheckLogs = "Check logs for further details";
         public const string CacheKey = "AutoBlockListContentTypes";
         public const string TinyMCECacheKey = "AutoBlockListContentTypesTinyMCE";
         public const string TinyMCECacheKey_Page = "AutoBlockListContentTypesTinyMCE_Page_{0}";

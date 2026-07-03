@@ -28,7 +28,7 @@ namespace AutoBlockList.Services
         private readonly IContentTypeService _contentTypeService;
         private readonly IDataValueEditorFactory _dataValueEditorFactory;
         private readonly PropertyEditorCollection _propertyEditorCollection;
-        private readonly IOptions<AutoBlockListSettings> _dataBlockConverterSettings;
+        private readonly IOptions<AutoBlockListSettings> _autoBlockListSettings;
         private readonly IConfigurationEditorJsonSerializer _configurationEditorJsonSerializer;
 
         public AutoBlockListService(ILogger<AutoBlockListService> logger,
@@ -39,7 +39,7 @@ namespace AutoBlockList.Services
             IContentTypeService contentTypeService,
             IDataValueEditorFactory dataValueEditorFactory,
             PropertyEditorCollection propertyEditorCollection,
-            IOptions<AutoBlockListSettings> dataBlockConverterSettings,
+            IOptions<AutoBlockListSettings> autoBlockListSettings,
             IConfigurationEditorJsonSerializer configurationEditorJsonSerializer)
         {
             _logger = logger;
@@ -50,14 +50,14 @@ namespace AutoBlockList.Services
             _contentTypeService = contentTypeService;
             _dataValueEditorFactory = dataValueEditorFactory;
             _propertyEditorCollection = propertyEditorCollection;
-            _dataBlockConverterSettings = dataBlockConverterSettings;
+			_autoBlockListSettings = autoBlockListSettings;
             _configurationEditorJsonSerializer = configurationEditorJsonSerializer;
         }
 
-        public string GetNameFormatting() => _dataBlockConverterSettings.Value.NameFormatting;
-        public string GetAliasFormatting() => _dataBlockConverterSettings.Value.AliasFormatting;
-        public bool GetSaveAndPublishSetting() => _dataBlockConverterSettings.Value.SaveAndPublish;
-        public string GetBlockListEditorSize() => _dataBlockConverterSettings.Value.BlockListEditorSize;
+        public string GetNameFormatting() => _autoBlockListSettings.Value.NameFormatting;
+        public string GetAliasFormatting() => _autoBlockListSettings.Value.AliasFormatting;
+        public bool GetSaveAndPublishSetting() => _autoBlockListSettings.Value.SaveAndPublish;
+        public string GetBlockListEditorSize() => _autoBlockListSettings.Value.BlockListEditorSize;
 
         public IDataType? CreateBLDataType(IDataType ncDataType)
         {
@@ -232,12 +232,14 @@ namespace AutoBlockList.Services
 			{
 				var convertReport = new ConvertReport()
 				{
-					Task = "Coverting content",
+					Task = "Converting content",
 					ErrorMessage = string.Format("Failed to find node with id {0}", id),
 					Status = AutoBlockListConstants.Status.Failed
 				};
 
 				_hubContext.Client?.AddReport(convertReport);
+
+                return;
 			}
 
 			var allNCProperties = node.Properties.Where(x => x.PropertyType.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent); ;

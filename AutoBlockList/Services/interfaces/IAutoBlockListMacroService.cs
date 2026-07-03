@@ -9,7 +9,7 @@ namespace AutoBlockList.Services.interfaces
 	{
 		string GetFolderNameForContentTypes();
 		string[] GetMacroStrings(string content);
-		Dictionary<string, object> GetParametersFromMaco(string macroString);
+		Dictionary<string, object> GetParametersFromMacro(string macroString);
 		bool HasMacro(string content);
 		string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys, string culture = null);
 		string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string culture = null);

@@ -1,21 +1,16 @@
 ﻿using NPoco;
-using System.Linq;
-using Newtonsoft.Json;
 using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using AutoBlockList.Hubs;
 using Umbraco.Extensions;
-using AutoBlockList.Services;
 using Umbraco.Cms.Core.Cache;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Services;
-using AutoBlockList.Dtos.BlockList;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using Umbraco.Cms.Web.Common.Attributes;
@@ -24,7 +19,6 @@ using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.Cms.Web.Common.Authorization;
-using System.ComponentModel.DataAnnotations;
 using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 
@@ -182,14 +176,14 @@ namespace AutoBlockList.Controllers
 			var client = _autoBlockListHubClientFactory.CreateClient(dto.ConnectionId);
 			_autoBlockListContext.SetClient(client);
 
-			var index = 0;
-			foreach (var autoBlockListContent in dto.Contents)
+			var contents = dto.Contents?.ToList() ?? new List<AutoBlockListContent>();
+			for (var index = 0; index < contents.Count; index++)
 			{
+				var autoBlockListContent = contents[index];
 				try
 				{
 					var content = _contentService.GetById(autoBlockListContent.Id);
 					var fullContentType = _contentTypeService.Get(autoBlockListContent.ContentTypeKey);
-					index = dto.Contents.FindIndex(x => x == autoBlockListContent);
 
 					contentMacroReport = new ConvertReport()
 					{
@@ -382,9 +376,10 @@ namespace AutoBlockList.Controllers
 
 			try
 			{
-				foreach (var content in dto.Contents)
+				var contents = dto.Contents?.ToList() ?? new List<AutoBlockListContent>();
+				for (var index = 0; index < contents.Count; index++)
 				{
-					var index = dto.Contents.FindIndex(x => x == content);
+					var content = contents[index];
 
 					client.CurrentTask("Converting data types");
 					client.SetTitle(content.Name);

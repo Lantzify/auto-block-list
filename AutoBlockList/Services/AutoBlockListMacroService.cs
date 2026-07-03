@@ -87,7 +87,7 @@ namespace AutoBlockList.Services
 					.ToArray();
 		}
 
-		public Dictionary<string, object> GetParametersFromMaco(string macroString)
+		public Dictionary<string, object> GetParametersFromMacro(string macroString)
 		{
 			var parameters = new Dictionary<string, object>();
 
@@ -122,7 +122,14 @@ namespace AutoBlockList.Services
 
 			try
 			{
-				RichTextPropertyEditorHelper.TryParseRichTextEditorValue(tinyMceContent, _jsonSerializer, _logger, out var richTextEditorValue);
+				if (!RichTextPropertyEditorHelper.TryParseRichTextEditorValue(tinyMceContent, _jsonSerializer, _logger, out var richTextEditorValue))
+				{
+					macroStringReport.Status = AutoBlockListConstants.Status.Failed;
+					macroStringReport.ErrorMessage = "Failed to parse rich text editor value.";
+					_hubContext.Client?.AddReport(macroStringReport);
+					return string.Empty;
+				}
+				
 				var macros = GetMacroStrings(richTextEditorValue.Markup);
 
 				foreach (var macroString in macros)
@@ -131,7 +138,7 @@ namespace AutoBlockList.Services
 
 					_hubContext.Client?.CurrentTask(macroStringReport.Task);
 
-					var parameters = GetParametersFromMaco(macroString);
+					var parameters = GetParametersFromMacro(macroString);
 					if (string.IsNullOrEmpty(parameters["macroAlias"].ToString()))
 					{
 						macroStringReport.ErrorMessage = "Macro alias parameter is missing.";
@@ -157,8 +164,6 @@ namespace AutoBlockList.Services
 
 					macroStringReport.Status = AutoBlockListConstants.Status.Success;
 					_hubContext.Client?.AddReport(macroStringReport);
-
-
 
 					var dataConvertReport = new ConvertReport
 					{
