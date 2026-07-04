@@ -9,14 +9,11 @@ using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Services;
-using CSharpTest.Net.Collections;
-using AutoBlockList.Dtos.BlockList;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
-using Microsoft.Extensions.Primitives;
 using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using static Umbraco.Cms.Core.Constants;
@@ -201,24 +198,22 @@ namespace AutoBlockList.Services
 			}
 		}
 
-		public string ProcessBlockListValues(string stringValue, IEnumerable<Guid> contentTypeKeys, string culture = null)
+		public string ProcessBlockValues(string stringValue, IEnumerable<Guid> contentTypeKeys, string culture = null)
 		{
 			if (string.IsNullOrEmpty(stringValue))
 				return string.Empty;
 
-			var blockList = JsonConvert.DeserializeObject<BlockList>(stringValue);
-			if (blockList == null)
+			var root = JObject.Parse(stringValue);
+			if (root["contentData"] is not JArray contentDataArray)
 				return string.Empty;
 
-			var contentBlocksWithRte = blockList.contentData.Where(x => contentTypeKeys.Contains(Guid.Parse(x.GetValue("contentTypeKey"))));
+			var contentBlocksWithRte = contentDataArray
+				.OfType<JObject>()
+				.Where(x => Guid.TryParse(x["contentTypeKey"]?.Value<string>(), out var key) && contentTypeKeys.Contains(key));
+
 			foreach (var contentBlock in contentBlocksWithRte)
 			{
-				if (!contentBlock.TryGetValue("contentTypeKey", out string contentTypeKeyString))
-				{
-					continue;
-				}
-
-				Guid contentTypeKey = Guid.Parse(contentTypeKeyString);
+				var contentTypeKey = Guid.Parse(contentBlock["contentTypeKey"].Value<string>());
 				var contentTypeWithRichTextEditor = _contentTypeService.Get(contentTypeKey);
 
 				if (contentTypeWithRichTextEditor == null)
@@ -227,35 +222,38 @@ namespace AutoBlockList.Services
 				var tinyMceProperies = contentTypeWithRichTextEditor.PropertyTypes.ToList();
 				tinyMceProperies.AddRange(contentTypeWithRichTextEditor.CompositionPropertyTypes);
 
-				var aliases = tinyMceProperies.Select(x => x.Alias);
-
-				var rawPropertyValues = contentBlock.Where(x => aliases.Contains(x.Key));
-				foreach (var rawPropertyValue in rawPropertyValues)
+				foreach (var property in contentBlock.Properties().ToList())
 				{
-					var tinyMceProperty = tinyMceProperies.FirstOrDefault(x => x.Alias == rawPropertyValue.Key);
+					var tinyMceProperty = tinyMceProperies.FirstOrDefault(x => x.Alias == property.Name);
 
 					if (tinyMceProperty == null)
 						continue;
 
-					if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockList)
+					if (property.Value == null || property.Value.Type != JTokenType.String)
+						continue;
+
+					var rawValue = property.Value.Value<string>();
+
+					if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockList ||
+						tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.BlockGrid)
 					{
-						var nestedBlocklist = ProcessBlockListValues(rawPropertyValue.Value, contentTypeKeys, culture);
-						if (!string.IsNullOrEmpty(nestedBlocklist) && nestedBlocklist != contentBlock[rawPropertyValue.Key])
-							contentBlock[rawPropertyValue.Key] = nestedBlocklist;
+						var nestedValue = ProcessBlockValues(rawValue, contentTypeKeys, culture);
+						if (!string.IsNullOrEmpty(nestedValue) && nestedValue != rawValue)
+							contentBlock[property.Name] = nestedValue;
 					}
 					else if (tinyMceProperty.PropertyEditorAlias == PropertyEditors.Aliases.TinyMce)
 					{
-						var updatedValue = ProcessTinyMceContentForMacroConversion(rawPropertyValue.Value, tinyMceProperty, culture);
+						var updatedValue = ProcessTinyMceContentForMacroConversion(rawValue, tinyMceProperty, culture);
 
 						if (string.IsNullOrEmpty(updatedValue))
 							continue;
 
-						contentBlock[rawPropertyValue.Key] = updatedValue;
+						contentBlock[property.Name] = updatedValue;
 					}
 				}
 			}
 
-			return JsonConvert.SerializeObject(blockList);
+			return root.ToString(Formatting.None);
 		}
 
 		public bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null)

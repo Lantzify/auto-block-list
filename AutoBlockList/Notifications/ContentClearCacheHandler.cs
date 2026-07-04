@@ -16,13 +16,13 @@ namespace AutoBlockList.Notifications
 
 		public void Handle(ContentSavedNotification notification)
 		{
-			if (notification.SavedEntities.Any(x => x.Properties.Any(p => AutoBlockListConstants.RichTextEditor_And_BlockListAlias.Contains(p.PropertyType.PropertyEditorAlias))))
+			if (notification.SavedEntities.Any(x => x.Properties.Any(p => AutoBlockListConstants.RichTextEditor_Block_Alias.Contains(p.PropertyType.PropertyEditorAlias))))
 				_runtimeCache.ClearByKey("AutoBlockListContentTypesTinyMCE_Page_");
 		}
 
 		public void Handle(ContentDeletedNotification notification)
 		{
-			if (notification.DeletedEntities.Any(x => x.Properties.Any(p => AutoBlockListConstants.RichTextEditor_And_BlockListAlias.Contains(p.PropertyType.PropertyEditorAlias))))
+			if (notification.DeletedEntities.Any(x => x.Properties.Any(p => AutoBlockListConstants.RichTextEditor_Block_Alias.Contains(p.PropertyType.PropertyEditorAlias))))
 				_runtimeCache.ClearByKey("AutoBlockListContentTypesTinyMCE_Page_");
 		}
 	}

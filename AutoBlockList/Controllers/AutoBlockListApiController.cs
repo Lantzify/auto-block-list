@@ -104,6 +104,7 @@ namespace AutoBlockList.Controllers
 			{
 				var contentTypes = GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.TinyMce).ToList();
 				contentTypes.AddRange(GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.BlockList));
+				contentTypes.AddRange(GetContentTypesByPropertyEditorAlias(PropertyEditors.Aliases.BlockGrid));
 
 				return contentTypes != null && contentTypes.Any() ? contentTypes : null;
 			});
@@ -118,7 +119,7 @@ namespace AutoBlockList.Controllers
 			foreach (var contentTypeId in contentTypesIds)
 			{
 				var contentType = _contentTypeService.Get(contentTypeId);
-				var tinyMceProperties = contentType.PropertyTypes.Where(x => AutoBlockListConstants.RichTextEditor_And_BlockListAlias.Contains(x.PropertyEditorAlias));
+				var tinyMceProperties = contentType.PropertyTypes.Where(x => AutoBlockListConstants.RichTextEditor_Block_Alias.Contains(x.PropertyEditorAlias));
 				tinyMcePropertyTypeIds.AddRange(tinyMceProperties.Select(p => p.Alias));
 			}
 
@@ -226,59 +227,53 @@ namespace AutoBlockList.Controllers
 						}
 					}
 
-					var blockListPropertyTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList).ToList();
-					blockListPropertyTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList));
+					var blockPropertyTypes = fullContentType.PropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList || x.PropertyEditorAlias == PropertyEditors.Aliases.BlockGrid).ToList();
+					blockPropertyTypes.AddRange(fullContentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.BlockList || x.PropertyEditorAlias == PropertyEditors.Aliases.BlockGrid));
 
-					if (blockListPropertyTypes != null && blockListPropertyTypes.Any())
+					if (blockPropertyTypes != null && blockPropertyTypes.Any())
 					{
 						var contentTypes = _runtimeCache.GetCacheItem<IEnumerable<CustomContentTypeReferences>>(AutoBlockListConstants.TinyMCECacheKey);
 						var contentTypeAliases = contentTypes.Select(x => x.Alias);
 						var contentTypeKeys = contentTypes.Select(s => s.Key);
 
-						foreach (var blockListPropertyType in blockListPropertyTypes)
+						foreach (var blockPropertyType in blockPropertyTypes)
 						{
-							var blocklistDataTypeReport = new ConvertReport()
+							var blockDataTypeReport = new ConvertReport()
 							{
-								Task = $"Checking for macros in block list with name: '{blockListPropertyType.Name}'",
+								Task = $"Checking for macros in {blockPropertyType.PropertyEditorAlias} with name: '{blockPropertyType.Name}'",
 							};
 
-							client.CurrentTask(blocklistDataTypeReport.Task);
+							client.CurrentTask(blockDataTypeReport.Task);
 
-							if (blockListPropertyType.VariesByCulture())
+							if (blockPropertyType.VariesByCulture())
 							{
 								foreach (var culture in content.AvailableCultures)
 								{
-									blocklistDataTypeReport.Task += $" for culture: '{culture}'";
+									blockDataTypeReport.Task += $" for culture: '{culture}'";
 
-									var dataType = _dataTypeService.GetDataType(blockListPropertyType.DataTypeId);
-									var blockListConfig = dataType.Configuration as BlockListConfiguration;
-
-									var stringValue = content.GetValue<string>(blockListPropertyType.Alias, culture);
+									var stringValue = content.GetValue<string>(blockPropertyType.Alias, culture);
 
 									if(string.IsNullOrWhiteSpace(stringValue))
 										continue;
 
-									var processedBlocklistValue = _autoBlockListMacroService.ProcessBlockListValues(stringValue, contentTypeKeys, culture);
+									var processedBlockValue = _autoBlockListMacroService.ProcessBlockValues(stringValue, contentTypeKeys, culture);
 
-									if (processedBlocklistValue != stringValue)
+									if (processedBlockValue != stringValue)
 									{
 										shouldSave = true;
-										content.SetValue(blockListPropertyType.Alias, processedBlocklistValue, culture);
+										content.SetValue(blockPropertyType.Alias, processedBlockValue, culture);
 									}
 								}
 							}
 							else
 							{
-								var dataType = _dataTypeService.GetDataType(blockListPropertyType.DataTypeId);
-								var blockListConfig = dataType.Configuration as BlockListConfiguration;
+								var stringValue = content.GetValue<string>(blockPropertyType.Alias);
+								var processedBlockValue = _autoBlockListMacroService.ProcessBlockValues(stringValue, contentTypeKeys);
 
-								var stringValue = content.GetValue<string>(blockListPropertyType.Alias);
-								var processedBlocklistValue = _autoBlockListMacroService.ProcessBlockListValues(stringValue, contentTypeKeys);
-
-								if (processedBlocklistValue != stringValue)
+								if (processedBlockValue != stringValue)
 								{
 									shouldSave = true;
-									content.SetValue(blockListPropertyType.Alias, processedBlocklistValue);
+									content.SetValue(blockPropertyType.Alias, processedBlockValue);
 								}
 							}
 						}

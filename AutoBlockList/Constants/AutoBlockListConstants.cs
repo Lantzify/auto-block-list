@@ -18,10 +18,11 @@ namespace AutoBlockList.Constants
             "key"
         };
 
-        public static readonly string[] RichTextEditor_And_BlockListAlias = {
+        public static readonly string[] RichTextEditor_Block_Alias = {
 
 		    PropertyEditors.Aliases.TinyMce,
-		    PropertyEditors.Aliases.BlockList
+		    PropertyEditors.Aliases.BlockList,
+            PropertyEditors.Aliases.BlockGrid
 	    };
 
 		public const string SQL_WITH_MACRO_INFO = @"
