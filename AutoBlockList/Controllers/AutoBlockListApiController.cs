@@ -154,6 +154,7 @@ namespace AutoBlockList.Controllers
 							ContentTypeKey = content.ContentType.Key,
 							Name = content.Name,
 							Id = content.Id,
+							Published = content.Published,
 							HasBLAssociated = x.HasMacro
 						};
 					})
@@ -287,7 +288,7 @@ namespace AutoBlockList.Controllers
 						continue;
 					}
 
-					if (_autoBlockListService.GetSaveAndPublishSetting())
+					if (content.Published && _autoBlockListService.GetSaveAndPublishSetting())
 					{
 						client.CurrentTask("Saving and publishing node: " + content.Name);
 						_contentService.SaveAndPublish(content);
@@ -356,6 +357,7 @@ namespace AutoBlockList.Controllers
 				ContentTypeKey = x.ContentType.Key,
 				Name = x.Name,
 				Id = x.Id,
+				Published = x.Published,
 				HasBLAssociated = _autoBlockListService.HasBLContent(x)
 			});
 

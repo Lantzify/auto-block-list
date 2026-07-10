@@ -67,11 +67,11 @@
                                         </div>
                                     </div>
                                     <div class="umb-table-body">
-                                        <div class="umb-table-row" ng-repeat="page in vm.pagedContent.items" ng-click="vm.toggleSelect(vm.selectedContent, page)" ng-class="{'-selected' : vm.findIndex(vm.selectedContent, page.id) !== -1}">
+                                        <div class="umb-table-row" ng-repeat="page in vm.pagedContent.items" ng-click="vm.toggleSelect(vm.selectedContent, page)" ng-class="{'-selected' : vm.findIndex(vm.selectedContent, page.id) !== -1, 'not-published' : !page.published}">
                                             <div class="umb-table-cell">
-                                                <umb-icon icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
+                                                <umb-icon title="{{page.Published ? 'Published' : 'Unpublished'}}" icon="{{vm.findIndex(vm.selectedContent, page.id) !== -1 ? 'icon-check' : page.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
-                                            <div class="umb-table-cell umb-table__name"><span>{{page.name}}</span></div>
+                                            <div class="umb-table-cell umb-table__name"><span title="{{page.Published ? 'Published' : 'Unpublished'}}">{{page.name}}</span></div>
                                             <div class="umb-table-cell"><umb-icon icon="{{page.hasBLAssociated ? 'icon-check color-green' : 'icon-alert-alt color-red'}}" class="umb-table-body__icon" style="margin:0;"></umb-icon></div>
                                             <div class="umb-table-cell">
                                                 <umb-button ng-click="$event.stopPropagation();"
@@ -154,11 +154,11 @@
                                         </div>
                                     </div>
                                     <div class="umb-table-body">
-                                        <div class="umb-table-row" ng-repeat="pageWithMacro in vm.pagedContentWithMacros.items" ng-click="vm.toggleSelect(vm.selectedMacroContent, pageWithMacro)" ng-class="{'-selected' : vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1}">
+                                        <div class="umb-table-row" ng-repeat="pageWithMacro in vm.pagedContentWithMacros.items" ng-click="vm.toggleSelect(vm.selectedMacroContent, pageWithMacro)" ng-class="{'-selected' : vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1, 'not-published' : !page.published}">
                                             <div class="umb-table-cell">
-                                                <umb-icon icon="{{vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1 ? 'icon-check' : pageWithMacro.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
+                                                <umb-icon title="{{page.Published ? 'Published' : 'Unpublished'}}" icon="{{vm.findIndex(vm.selectedMacroContent, pageWithMacro.id) !== -1 ? 'icon-check' : pageWithMacro.contentType.icon}}" class="umb-table-body__icon"></umb-icon>
                                             </div>
-                                            <div class="umb-table-cell umb-table__name"><span>{{pageWithMacro.name}}</span></div>
+                                            <div class="umb-table-cell umb-table__name"><span title="{{page.Published ? 'Published' : 'Unpublished'}}">{{pageWithMacro.name}}</span></div>
                                             <div class="umb-table-cell"><umb-icon icon="{{pageWithMacro.hasBLAssociated ? 'icon-alert-alt color-red' : 'icon-check color-green'}}" class="umb-table-body__icon" style="margin:0;"></umb-icon></div>
                                             <div class="umb-table-cell">
                                                 <umb-button ng-click="$event.stopPropagation();"

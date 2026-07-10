@@ -22,3 +22,8 @@
     background-color: #f3f3f5;
     cursor: pointer;
 }
+
+#autoBlockList .not-published .umb-table__name,
+#autoBlockList .not-published .umb-icon {
+    opacity: .6;
+}
