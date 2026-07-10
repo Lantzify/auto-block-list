@@ -312,7 +312,10 @@ namespace AutoBlockList.Services
 					_hubContext.Client?.AddReport(report);
 				}
 			}
-            
+
+			if (!node.IsDirty())
+				return;
+
 			if (node.Published && GetSaveAndPublishSetting())
 			{
 				_contentService.SaveAndPublish(node);
