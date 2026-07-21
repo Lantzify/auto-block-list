@@ -14,12 +14,16 @@ using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using Umbraco.Cms.Web.Common.Attributes;
+using static Lucene.Net.Documents.Field;
 using static Umbraco.Cms.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.Cms.Web.Common.Authorization;
+using static System.Formats.Asn1.AsnWriter;
+using System.ComponentModel.DataAnnotations;
 using Umbraco.Cms.Core.Models.ContentEditing;
+using static Umbraco.Cms.Core.Constants.Conventions;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 
 namespace AutoBlockList.Controllers
@@ -443,6 +447,44 @@ namespace AutoBlockList.Controllers
 				_autoBlockListContext.ClearClient();
 				return ValidationProblem(ex.Message);
 			}
+
+			_autoBlockListContext.ClearClient();
+			return Ok();
+		}
+
+		[HttpPost]
+		public IActionResult RemoveAllNC(ConvertDto dto)
+		{
+			var client = _autoBlockListHubClientFactory.CreateClient(dto.ConnectionId);
+			_autoBlockListContext.SetClient(client);
+
+			try
+			{
+				var dataTypes = _dataTypeService.GetByEditorAlias(PropertyEditors.Aliases.NestedContent);
+				foreach (var dataType in dataTypes)
+				{
+					var report = new ConvertReport()
+					{
+						Task = $"Removing nested content data type",
+						Status = AutoBlockListConstants.Status.Failed
+					};
+
+					client.UpdateItem(dataType.Name);
+					client.CurrentTask(report.Task);
+									
+					_dataTypeService.Delete(dataType);
+					report.Status = AutoBlockListConstants.Status.Success;
+					client.AddReport(report);
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Failed to remove all nested content data types");
+				_autoBlockListContext.ClearClient();
+				return ValidationProblem(ex.Message);
+			}
+
+			_autoBlockListContext.Client.Done("");
 
 			_autoBlockListContext.ClearClient();
 			return Ok();

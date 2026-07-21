@@ -11,8 +11,10 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
     vm.currentTask = "";
     vm.item = "";
 
-    setTitle($scope.model.content[0].name);
-    setSubTitle(0);
+    if ($scope.model.content != undefined) {
+        setTitle($scope.model.content[0].name);
+        setSubTitle(0);
+    }
 
     var signalRScript = Umbraco.Sys.ServerVariables.umbracoSettings.umbracoPath + "/lib/signalr/signalr.min.js";
 
@@ -22,7 +24,7 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         connection.start().then(function () {
             $http({
                 method: "POST",
-                url: "/umbraco/backoffice/api/AutoBlockListApi/Convert" + $scope.model.convertType,
+                url: "/umbraco/backoffice/api/AutoBlockListApi/" + ($scope.model.convertType === "NCDelete" ? "RemoveAllNC" : "Convert" + $scope.model.convertType),
                 data: {
                     Contents: $scope.model.content,
                     ConnectionId: connection.connectionId
@@ -79,6 +81,11 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
                 notificationsService.error("Auto block list", "failed to converted everything.")
+            } else if ($scope.model.convertType === "NCDelete") {
+                vm.showReport = true;
+                $scope.model.disableSubmitButton = false;
+                document.body.classList.add("hideClose");
+                notificationsService.success("Auto block list", "successfully removed all nested content.")
             }
 
             $scope.$apply();

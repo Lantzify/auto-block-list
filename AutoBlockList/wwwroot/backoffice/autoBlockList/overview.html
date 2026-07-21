@@ -217,6 +217,19 @@
                             <p>Name of the folder where document types based on macros will be created.</p>
                         </umb-box-content>
                     </umb-box>
+
+                    <umb-box>
+                        <umb-box-header title="Removal - Nested Content" description="Remove all nested content data types"></umb-box-header>
+                        <umb-box-content>
+                            <umb-button action="vm.removeAllNestedContent()"
+                                        type="button"
+                                        button-style="danger"
+                                        label="Remove all"
+                                        icon="icon-trash"
+                                        state="vm.removeAllButtonState">
+                            </umb-button>
+                        </umb-box-content>
+                    </umb-box>
                 </div>
             </div>
 

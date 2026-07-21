@@ -194,4 +194,36 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
 
         overlayService.confirm(confirmOptions);
     }
+
+    vm.removeAllNestedContent = function () {
+
+        var confirmOptions = {
+            title: "Confirm delete",
+            view: "/App_Plugins/AutoBlockList/components/overlays/confirmDelete.html",
+            submit: function () {
+                var options = {
+                    view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
+                    title: "Deleting..",
+                    convertType: "NCDelete",
+                    disableBackdropClick: true,
+                    disableEscKey: true,
+                    disableSubmitButton: true,
+                    submitButtonLabel: "Confirm",
+                    closeButtonLabel: "Close",
+                    submit: function (model) {
+                        $route.reload();
+                        overlayService.close();
+                        document.body.classList.remove("hideClose");
+                    },
+                    close: function () {
+                        overlayService.close();
+                    }
+                };
+
+                overlayService.open(options);
+            }
+        }
+
+        overlayService.confirm(confirmOptions);
+    }
 });
