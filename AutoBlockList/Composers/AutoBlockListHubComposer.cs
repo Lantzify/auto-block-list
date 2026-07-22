@@ -1,10 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using Umbraco.Extensions;
-using AutoBlockList.Hubs;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using AutoBlockList.Hubs;
 using Umbraco.Cms.Core.Composing;
 using Microsoft.AspNetCore.Builder;
 using Umbraco.Cms.Core.DependencyInjection;

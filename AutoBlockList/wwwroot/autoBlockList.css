@@ -27,3 +27,9 @@
 #autoBlockList .not-published .umb-icon {
     opacity: .6;
 }
+
+@media (max-width: 600px) {
+    .autoBlockList-removal-boxes .w-50 {
+        width: 100%;
+    }
+}

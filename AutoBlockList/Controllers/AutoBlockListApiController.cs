@@ -11,19 +11,14 @@ using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Core.PropertyEditors;
 using AutoBlockList.Services.interfaces;
 using Umbraco.Cms.Web.Common.Attributes;
-using static Lucene.Net.Documents.Field;
 using static Umbraco.Cms.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.Cms.Web.Common.Authorization;
-using static System.Formats.Asn1.AsnWriter;
-using System.ComponentModel.DataAnnotations;
 using Umbraco.Cms.Core.Models.ContentEditing;
-using static Umbraco.Cms.Core.Constants.Conventions;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 
 namespace AutoBlockList.Controllers
@@ -32,6 +27,7 @@ namespace AutoBlockList.Controllers
 	[Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
 	public class AutoBlockListApiController : UmbracoApiController
 	{
+		private readonly IMacroService _macroService;
 		private readonly IScopeProvider _scopeProvider;
 		private readonly IAppPolicyCache _runtimeCache;
 		private readonly IContentService _contentService;
@@ -43,7 +39,8 @@ namespace AutoBlockList.Controllers
 		private readonly IAutoBlockListContext _autoBlockListContext;
 		private readonly IAutoBlockListHubClientFactory _autoBlockListHubClientFactory;
 
-		public AutoBlockListApiController(IScopeProvider scopeProvider,
+		public AutoBlockListApiController(IMacroService macroService,
+			IScopeProvider scopeProvider,
 			AppCaches appCaches,
 			IContentService contentService,
 			IProfilingLogger profilingLogger,
@@ -56,6 +53,7 @@ namespace AutoBlockList.Controllers
 			IAutoBlockListContext autoBlockListContext,
 			IAutoBlockListHubClientFactory autoBlockListHubClientFactory)
 		{
+			_macroService = macroService;
 			_logger = logger;
 			_scopeProvider = scopeProvider;
 			_runtimeCache = appCaches.RuntimeCache;
@@ -333,6 +331,47 @@ namespace AutoBlockList.Controllers
 			return Ok();
 		}
 
+		[HttpPost]
+		public IActionResult RemoveAllMacro(ConvertDto dto)
+		{
+			var client = _autoBlockListHubClientFactory.CreateClient(dto.ConnectionId);
+			_autoBlockListContext.SetClient(client);
+
+			var macros = _macroService.GetAll();
+			if (macros != null && macros.Any())
+			{
+				foreach (var macro in macros)
+				{
+					var report = new ConvertReport()
+					{
+						Task = $"Removing macro: '{macro.Name}'",
+						Status = AutoBlockListConstants.Status.Failed
+					};
+
+					client.UpdateItem(macro.Name);
+					client.CurrentTask(report.Task);
+
+					_macroService.Delete(macro);
+					report.Status = AutoBlockListConstants.Status.Success;
+					client.AddReport(report);
+				}
+			}
+			else
+			{
+				client.AddReport(new ConvertReport()
+				{
+					Task = $"Removing macros",
+					Status = AutoBlockListConstants.Status.Skipped,
+					ErrorMessage = "No macros found to remove"
+				});
+			}
+
+			_autoBlockListContext.Client.Done("");
+
+			_autoBlockListContext.ClearClient();
+			return Ok();
+		}
+
 		#endregion
 
 		#region NestedContent
@@ -458,33 +497,36 @@ namespace AutoBlockList.Controllers
 			var client = _autoBlockListHubClientFactory.CreateClient(dto.ConnectionId);
 			_autoBlockListContext.SetClient(client);
 
-			try
+			var dataTypes = _dataTypeService.GetByEditorAlias(PropertyEditors.Aliases.NestedContent);
+			if (dataTypes != null && dataTypes.Any())
 			{
-				var dataTypes = _dataTypeService.GetByEditorAlias(PropertyEditors.Aliases.NestedContent);
 				foreach (var dataType in dataTypes)
 				{
 					var report = new ConvertReport()
 					{
-						Task = $"Removing nested content data type",
+						Task = $"Removing nested content data type: '{dataType.Name}'",
 						Status = AutoBlockListConstants.Status.Failed
 					};
 
 					client.UpdateItem(dataType.Name);
 					client.CurrentTask(report.Task);
-									
+
 					_dataTypeService.Delete(dataType);
 					report.Status = AutoBlockListConstants.Status.Success;
 					client.AddReport(report);
 				}
 			}
-			catch (Exception ex)
+			else
 			{
-				_logger.LogError(ex, "Failed to remove all nested content data types");
-				_autoBlockListContext.ClearClient();
-				return ValidationProblem(ex.Message);
+				client.AddReport(new ConvertReport()
+				{
+					Task = $"Removing nested content data types",
+					Status = AutoBlockListConstants.Status.Skipped,
+					ErrorMessage = "No nested content data types found to remove"
+				});
 			}
 
-			_autoBlockListContext.Client.Done("");
+			_autoBlockListContext.Client.Done(string.Empty);
 
 			_autoBlockListContext.ClearClient();
 			return Ok();

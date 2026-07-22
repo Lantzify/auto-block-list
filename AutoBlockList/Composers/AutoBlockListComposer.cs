@@ -19,7 +19,9 @@ namespace AutoBlockList.Composers
 
             builder.AddNotificationHandler<ContentTypeChangedNotification, ContentTypeChangedClearCacheHandler>()
                     .AddNotificationHandler<ContentSavedNotification, ContentClearCacheHandler>()
-                    .AddNotificationHandler<ContentDeletedNotification, ContentClearCacheHandler>();
+                    .AddNotificationHandler<ContentDeletedNotification, ContentClearCacheHandler>()
+                    .AddNotificationHandler<DataTypeDeletedNotification, DataTypeClearCacheHandler>()
+                    .AddNotificationHandler<MacroDeletedNotification, MacroClearCacheHandler>();
 
 			builder.Services.AddSingleton<IAutoBlockListHubClientFactory, AutoBlockListHubClientFactory>()
 							.AddScoped<IAutoBlockListContext, AutoBlockListContext>();

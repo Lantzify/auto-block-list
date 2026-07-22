@@ -1,4 +1,4 @@
-﻿﻿<div ng-controller="autoBlockList.overview.controller as vm" id="autoBlockList">
+﻿<div ng-controller="autoBlockList.overview.controller as vm" id="autoBlockList">
     <umb-editor-view>
         <umb-editor-header name="'Auto block list'"
                            hide-description="true"
@@ -218,18 +218,38 @@
                         </umb-box-content>
                     </umb-box>
 
-                    <umb-box>
-                        <umb-box-header title="Removal - Nested Content" description="Remove all nested content data types"></umb-box-header>
-                        <umb-box-content>
-                            <umb-button action="vm.removeAllNestedContent()"
-                                        type="button"
-                                        button-style="danger"
-                                        label="Remove all"
-                                        icon="icon-trash"
-                                        state="vm.removeAllButtonState">
-                            </umb-button>
-                        </umb-box-content>
-                    </umb-box>
+
+                    <div class="flex flex-wrap autoBlockList-removal-boxes">
+                        <div class="w-50">
+                            <umb-box class="mr3"> 
+                                <umb-box-header title="Removal - Nested Content" description="Remove all nested content data types"></umb-box-header>
+                                <umb-box-content>
+                                    <umb-button action="vm.removeAllNestedContent()"
+                                                type="button"
+                                                button-style="danger"
+                                                label="Remove all"
+                                                icon="icon-trash"
+                                                state="vm.removeAllButtonState">
+                                    </umb-button>
+                                </umb-box-content>
+                            </umb-box>
+                        </div>
+                        <div class="w-50">
+                            <umb-box>
+                                <umb-box-header title="Removal - Macros" description="Remove all macros data types"></umb-box-header>
+                                <umb-box-content>
+                                    <umb-button action="vm.removeAllMacros()"
+                                                type="button"
+                                                button-style="danger"
+                                                label="Remove all"
+                                                icon="icon-trash"
+                                                state="vm.removeAllButtonState">
+                                    </umb-button>
+                                </umb-box-content>
+                            </umb-box>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

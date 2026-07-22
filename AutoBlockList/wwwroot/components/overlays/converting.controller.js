@@ -24,7 +24,7 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         connection.start().then(function () {
             $http({
                 method: "POST",
-                url: "/umbraco/backoffice/api/AutoBlockListApi/" + ($scope.model.convertType === "NCDelete" ? "RemoveAllNC" : "Convert" + $scope.model.convertType),
+                url: "/umbraco/backoffice/api/AutoBlockListApi/" + $scope.model.action + $scope.model.convertType,
                 data: {
                     Contents: $scope.model.content,
                     ConnectionId: connection.connectionId
@@ -69,25 +69,25 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         });
 
         connection.on("Done", function (item) {
-            setSubTitle(item);
-
-            if (item === $scope.model.content.length) {
+           setSubTitle(item);
+       
+            if ($scope.model.content && item === $scope.model.content.length) {
                 vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
-                notificationsService.success("Auto block list", "successfully converted everything.")
+                notificationsService.success("Auto block list", "successfully converted everything.");
             } else if (item == "failed") {
                 vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
-                notificationsService.error("Auto block list", "failed to converted everything.")
-            } else if ($scope.model.convertType === "NCDelete") {
+                notificationsService.error("Auto block list", "failed to converted everything.");
+            } else if ($scope.model.action === "RemoveAll") {
                 vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
-                notificationsService.success("Auto block list", "successfully removed all nested content.")
+                notificationsService.success("Auto block list", "successfully removed all " + ($scope.model.convertType == "NC" ? "nested content" : "macros"));
             }
-
+           
             $scope.$apply();
         });
     });
@@ -98,6 +98,8 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
     };
 
     function setSubTitle(item) {
-        $scope.model.subtitle = item + " of " + $scope.model.content.length + " converted";
+        if (item) {
+            $scope.model.subtitle = item + " of " + total + " converted";
+        }
     };
 });

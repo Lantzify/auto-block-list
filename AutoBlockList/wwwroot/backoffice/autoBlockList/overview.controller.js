@@ -118,6 +118,40 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                     title: "Converting",
                     content: vm.selectedMacroContent,
                     convertType: "Macro",
+                    action: "Convert",
+                    disableBackdropClick: true,
+                    disableEscKey: true,
+                    disableSubmitButton: true,
+                    submitButtonLabel: "Confirm",
+                    closeButtonLabel: "Close",
+                    submit: function (model) {
+                        $route.reload();
+                        overlayService.close();
+                        document.body.classList.remove("hideClose");
+                    },
+                    close: function () {
+                        overlayService.close();
+                    }
+                };
+
+                overlayService.open(options);
+            }
+        }
+
+        overlayService.confirm(confirmOptions);
+    }
+
+    vm.removeAllMacros = function () {
+
+        var confirmOptions = {
+            title: "Confirm delete macros",
+            view: "/App_Plugins/AutoBlockList/components/overlays/confirmDeleteMacro.html",
+            submit: function () {
+                var options = {
+                    view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
+                    title: "Deleting macros...",
+                    convertType: "Macro",
+                    action: "RemoveAll",
                     disableBackdropClick: true,
                     disableEscKey: true,
                     disableSubmitButton: true,
@@ -173,6 +207,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                     title: "Converting",
                     content: vm.selectedContent,
                     convertType: "NC",
+                    action: "Convert",
                     disableBackdropClick: true,
                     disableEscKey: true,
                     disableSubmitButton: true,
@@ -198,13 +233,14 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     vm.removeAllNestedContent = function () {
 
         var confirmOptions = {
-            title: "Confirm delete",
-            view: "/App_Plugins/AutoBlockList/components/overlays/confirmDelete.html",
+            title: "Confirm delete nested content",
+            view: "/App_Plugins/AutoBlockList/components/overlays/confirmDeleteNC.html",
             submit: function () {
                 var options = {
                     view: "/App_Plugins/AutoBlockList/components/overlays/converting.html",
-                    title: "Deleting..",
-                    convertType: "NCDelete",
+                    title: "Deleting nested content...",
+                    convertType: "NC",
+                    action: "RemoveAll",
                     disableBackdropClick: true,
                     disableEscKey: true,
                     disableSubmitButton: true,
