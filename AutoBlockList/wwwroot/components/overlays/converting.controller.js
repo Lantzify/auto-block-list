@@ -69,9 +69,9 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
         });
 
         connection.on("Done", function (item) {
-           setSubTitle(item);
-       
-            if ($scope.model.content && item === $scope.model.content.length) {
+             setSubTitle(item);
+           
+            if ($scope.model.content !== undefined && item === $scope.model.content.length) {
                 vm.showReport = true;
                 $scope.model.disableSubmitButton = false;
                 document.body.classList.add("hideClose");
@@ -98,8 +98,8 @@ angular.module("umbraco").controller("autoBlockList.converting.controller", func
     };
 
     function setSubTitle(item) {
-        if (item) {
-            $scope.model.subtitle = item + " of " + total + " converted";
+        if ($scope.model.content !== undefined) {
+            $scope.model.subtitle = item + " of " + $scope.model.content.length + " converted";
         }
     };
 });
