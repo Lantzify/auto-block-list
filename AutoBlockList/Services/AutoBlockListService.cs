@@ -2,6 +2,7 @@
 using Umbraco.Cms.Core;
 using AutoBlockList.Dtos;
 using Umbraco.Extensions;
+using AutoBlockList.Helpers;
 using AutoBlockList.Constants;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
@@ -153,7 +154,6 @@ namespace AutoBlockList.Services
 
 			try
 			{
-
 				var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
 				var isComposition = contentType.CompositionIds().Any();
 
@@ -181,21 +181,34 @@ namespace AutoBlockList.Services
 								return convertReport;
 							}
 
-							compositionContentType.AddPropertyType(MapPropertyType(propertyType, ncDataType, blDataType),
-									compositionContentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
-							_contentTypeService.Save(compositionContentType);
-							convertReport.Status = AutoBlockListConstants.Status.Success;
+							var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
+                            if (propertyGroup != null)
+                            {
+                                SortHelper.InsertPropertyTypeAfter(contentType,
+                                    propertyGroup,
+                                    propertyType.Alias,
+                                    MapPropertyType(propertyType, ncDataType, blDataType));
 
+								_contentTypeService.Save(compositionContentType);
+								convertReport.Status = AutoBlockListConstants.Status.Success;
+							}
 						}
 					}
 				}
 
 				if (contentType.PropertyTypeExists(propertyType.Alias))
 				{
-					contentType.AddPropertyType(MapPropertyType(propertyType, ncDataType, blDataType),
-												contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value).Alias);
-					_contentTypeService.Save(contentType);
-					convertReport.Status = AutoBlockListConstants.Status.Success;
+				    var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
+                    if (propertyGroup != null)
+                    {
+                        SortHelper.InsertPropertyTypeAfter(contentType,
+                            propertyGroup,
+                            propertyType.Alias,
+                            MapPropertyType(propertyType, ncDataType, blDataType));
+
+					    _contentTypeService.Save(contentType);
+					    convertReport.Status = AutoBlockListConstants.Status.Success;
+				    }
 				}
 
 			}
