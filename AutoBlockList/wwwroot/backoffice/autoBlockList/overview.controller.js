@@ -10,8 +10,8 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
     vm.loadingTable = true;
     vm.loadingMacroTable = true;
 
-    vm.selectedContent = []
-    vm.selectedMacroContent = []
+    vm.selectedContent = [];
+    vm.selectedMacroContent = [];
 
     var appSettings = {
         AutoBlockList: {
@@ -125,7 +125,8 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                     submitButtonLabel: "Confirm",
                     closeButtonLabel: "Close",
                     submit: function (model) {
-                        $route.reload();
+                        vm.selectedMacroContent = []
+                        vm.paginatorMacro(vm.pagedContentWithMacros.pageNumber);
                         overlayService.close();
                         document.body.classList.remove("hideClose");
                     },
@@ -214,7 +215,8 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
                     submitButtonLabel: "Confirm",
                     closeButtonLabel: "Close",
                     submit: function (model) {
-                        $route.reload();
+                        vm.selectedContent = [];
+                        vm.goToPage(vm.pagedContent.pageNumber);
                         overlayService.close();
                         document.body.classList.remove("hideClose");
                     },
