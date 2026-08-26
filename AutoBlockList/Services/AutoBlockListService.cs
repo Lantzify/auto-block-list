@@ -154,63 +154,62 @@ namespace AutoBlockList.Services
 
 			try
 			{
-				var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
 				var isComposition = contentType.CompositionIds().Any();
-
-				propertyType = isComposition ? contentType.CompositionPropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id) : propertyType;
-
-				if (contentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
+                var propertyTypes = isComposition ? contentType.PropertyTypes.Where(x => x.DataTypeId == ncDataType.Id) : contentType.CompositionPropertyTypes.Where(x => x.DataTypeId == ncDataType.Id);
+				foreach (var propertyType in propertyTypes)
 				{
-					convertReport.Status = AutoBlockListConstants.Status.Skipped;
-					_hubContext.Client?.AddReport(convertReport);
-					return convertReport;
-				}
-
-				if (isComposition)
-				{
-					var compositionContentTypeIds = contentType.CompositionIds();
-					foreach (var compositionContentTypeId in compositionContentTypeIds)
+					if (contentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
 					{
-						var compositionContentType = _contentTypeService.Get(compositionContentTypeId);
-						if (compositionContentType != null && compositionContentType.PropertyTypeExists(propertyType.Alias))
+						convertReport.Status = AutoBlockListConstants.Status.Skipped;
+						_hubContext.Client?.AddReport(convertReport);
+						continue;
+					}
+
+					if (isComposition)
+					{
+						var compositionContentTypeIds = contentType.CompositionIds();
+						foreach (var compositionContentTypeId in compositionContentTypeIds)
 						{
-							if (compositionContentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
+							var compositionContentType = _contentTypeService.Get(compositionContentTypeId);
+							if (compositionContentType != null && compositionContentType.PropertyTypeExists(propertyType.Alias))
 							{
-								convertReport.Status = AutoBlockListConstants.Status.Skipped;
-								_hubContext.Client?.AddReport(convertReport);
-								return convertReport;
-							}
+								if (compositionContentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
+								{
+									convertReport.Status = AutoBlockListConstants.Status.Skipped;
+									_hubContext.Client?.AddReport(convertReport);
+									return convertReport;
+								}
 
-							var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
-                            if (propertyGroup != null)
-                            {
-                                SortHelper.InsertPropertyTypeAfter(contentType,
-                                    propertyGroup,
-                                    propertyType.Alias,
-                                    MapPropertyType(propertyType, ncDataType, blDataType));
+								var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
+								if (propertyGroup != null)
+								{
+									SortHelper.InsertPropertyTypeAfter(contentType,
+										propertyGroup,
+										propertyType.Alias,
+										MapPropertyType(propertyType, ncDataType, blDataType));
 
-								_contentTypeService.Save(compositionContentType);
-								convertReport.Status = AutoBlockListConstants.Status.Success;
+									_contentTypeService.Save(compositionContentType);
+									convertReport.Status = AutoBlockListConstants.Status.Success;
+								}
 							}
 						}
 					}
+
+					if (contentType.PropertyTypeExists(propertyType.Alias))
+					{
+						var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
+						if (propertyGroup != null)
+						{
+							SortHelper.InsertPropertyTypeAfter(contentType,
+								propertyGroup,
+								propertyType.Alias,
+								MapPropertyType(propertyType, ncDataType, blDataType));
+
+							_contentTypeService.Save(contentType);
+							convertReport.Status = AutoBlockListConstants.Status.Success;
+						}
+					}
 				}
-
-				if (contentType.PropertyTypeExists(propertyType.Alias))
-				{
-				    var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
-                    if (propertyGroup != null)
-                    {
-                        SortHelper.InsertPropertyTypeAfter(contentType,
-                            propertyGroup,
-                            propertyType.Alias,
-                            MapPropertyType(propertyType, ncDataType, blDataType));
-
-					    _contentTypeService.Save(contentType);
-					    convertReport.Status = AutoBlockListConstants.Status.Success;
-				    }
-				}
-
 			}
 			catch (Exception ex)
 			{
@@ -484,7 +483,7 @@ namespace AutoBlockList.Services
                 }
             }
 
-            return dataTypes;
+            return dataTypes.DistinctBy(x => x.Id);
         }
 
 		public IEnumerable<int> GetComposedOf(IEnumerable<int> ids)
@@ -505,7 +504,7 @@ namespace AutoBlockList.Services
             if (contentType.CompositionPropertyTypes.Any())
                 propertyTypes.AddRange(contentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent));
 
-            return propertyTypes;
+            return propertyTypes.DistinctBy(x => x.Id);
         }
 
         public IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType)
