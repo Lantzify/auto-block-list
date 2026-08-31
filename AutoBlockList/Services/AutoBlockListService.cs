@@ -155,8 +155,12 @@ namespace AutoBlockList.Services
 			try
 			{
 				var isComposition = contentType.CompositionIds().Any();
-                var propertyTypes = isComposition ? contentType.PropertyTypes.Where(x => x.DataTypeId == ncDataType.Id) : contentType.CompositionPropertyTypes.Where(x => x.DataTypeId == ncDataType.Id);
-				foreach (var propertyType in propertyTypes)
+				var propertyTypes = (isComposition
+					? contentType.PropertyTypes.Where(x => x.DataTypeId == ncDataType.Id)
+					: contentType.CompositionPropertyTypes.Where(x => x.DataTypeId == ncDataType.Id))
+					.ToList(); 
+                
+                foreach (var propertyType in propertyTypes)
 				{
 					if (contentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
 					{
