@@ -469,7 +469,7 @@ namespace AutoBlockList.Services
 				Status = AutoBlockListConstants.Status.Skipped
 			};
 
-			string macroPartialView = macro.Name + ".cshtml";
+			string macroPartialView = macro.Alias + ".cshtml";
 			var partialViews = _fileSystem.PartialViewsFileSystem.GetFiles(_partialViewDirectory);
 
 			if (!partialViews.Any(x => x.Contains(macroPartialView)))
