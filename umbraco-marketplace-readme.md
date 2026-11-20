@@ -29,6 +29,7 @@ With the removal of nested content in Umbraco 13 and macros in Umbraco 14, upgra
 "AutoBlockList": {
      BlockListEditorSize: "medium",
      SaveAndPublish: true,
+     ConvertLabelsToUfm: false,
      NameFormatting: "[Block list] - {0}",
      AliasFormatting: "{0}BL",
      FolderNameForContentTypes: "[Rich text editor] - Components"
@@ -36,6 +37,7 @@ With the removal of nested content in Umbraco 13 and macros in Umbraco 14, upgra
 ```
 - ``BlockListEditorSize`` Determines the default size when creating a block list data type. Sizes: ``small``, ``medium``, ``large``.
 - ``SaveAndPublish`` When transferring content. If the node should be saved and published or only saved.
+- ``ConvertLabelsToUfm`` Converts nested content labels (``{{title}}``) to Umbraco Flavored Markdown (``{=title}``) used by v14+. Only enable this if you're upgrading right after converting, as v13 can't display these labels.
 - In the ``NameFormatting`` setting the ``{0}`` will be replaced with the nested content data type name. Make sure to keep the ``{0}``. 
 - In the ``AliasFormatting`` setting the ``{0}`` will be replaced with the property alias containing the nested content. Make sure to keep the ``{0}``. 
 - ``FolderNameForContentTypes`` Determines the name of the folder where document types based on macros will be created. (This folder will be created in the root)
