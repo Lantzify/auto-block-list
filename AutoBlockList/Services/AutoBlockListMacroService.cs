@@ -182,7 +182,7 @@ namespace AutoBlockList.Services
 
 					richTextEditorValue = ReplaceMacroWithBlockList(macroString, parameters, configEditor, dataType, contentType, richTextEditorValue);
 
-					var createPartialViewReport = CreatePartialView(macro);
+					var createPartialViewReport = CreatePartialView(macro, contentType.Alias);
 					_hubContext.Client?.AddReport(createPartialViewReport);
 				}
 
@@ -461,7 +461,7 @@ namespace AutoBlockList.Services
 			return richTextEditorValue;
 		}
 
-		public ConvertReport CreatePartialView(IMacro macro)
+		public ConvertReport CreatePartialView(IMacro macro, string contentTypeAlias)
 		{
 			ConvertReport report = new ConvertReport
 			{
@@ -469,19 +469,19 @@ namespace AutoBlockList.Services
 				Status = AutoBlockListConstants.Status.Skipped
 			};
 
-			string macroPartialView = macro.Alias + ".cshtml";
-			var partialViews = _fileSystem.PartialViewsFileSystem.GetFiles(_partialViewDirectory);
+			// Umbraco renders RTE blocks from richtext/Components/{element type alias}.cshtml
+			string blockPartialView = _partialViewDirectory + contentTypeAlias + ".cshtml";
 
-			if (!partialViews.Any(x => x.Contains(macroPartialView)))
+			if (macro.MacroSource != null && !_fileSystem.PartialViewsFileSystem.FileExists(blockPartialView))
 			{
-				var partialviewMacro = _fileService.GetPartialViewMacro(macroPartialView);
+				var partialviewMacro = _fileService.GetPartialViewMacro(macro.MacroSource.Replace(SystemDirectories.MacroPartials, ""));
 
 				if (partialviewMacro != null)
 				{
 					string content = partialviewMacro.Content?.Replace("@inherits Umbraco.Cms.Web.Common.Macros.PartialViewMacroPage", "@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.RichTextBlockItem>") ?? "";
 
 					using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-					_fileSystem.PartialViewsFileSystem.AddFile(_partialViewDirectory + macroPartialView, stream);
+					_fileSystem.PartialViewsFileSystem.AddFile(blockPartialView, stream);
 
 					report.Status = AutoBlockListConstants.Status.Success;
 				}

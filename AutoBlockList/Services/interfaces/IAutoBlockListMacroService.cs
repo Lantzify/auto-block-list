@@ -15,7 +15,7 @@ namespace AutoBlockList.Services.interfaces
 		string ProcessTinyMceContentForMacroConversion(string tinyMceContent, IPropertyType tinyMceDataType, string culture = null);
 		bool ProcessContentForMacroConversion(IContent content, IPropertyType tinyMceDataType, string culture = null);
 		ContentType ConvertMacroToContentType(IMacro macro);
-		ConvertReport CreatePartialView(IMacro macro);
+		ConvertReport CreatePartialView(IMacro macro, string contentTypeAlias);
 		RichTextEditorValue ReplaceMacroWithBlockList(string macroString, Dictionary<string, object> parameters, RichTextConfigurationEditor configEditor, IDataType dataType, ContentType contentType, RichTextEditorValue richTextEditorValue);
 	}
 }
