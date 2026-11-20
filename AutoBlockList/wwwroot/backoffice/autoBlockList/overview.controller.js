@@ -17,6 +17,7 @@ angular.module("umbraco").controller("autoBlockList.overview.controller", functi
         AutoBlockList: {
             BlockListEditorSize: "medium",
             SaveAndPublish: true,
+            ConvertLabelsToUfm: false,
             NameFormatting: "[Block list] - {0}",
             AliasFormatting: "{0}BL",
             FolderNameForContentTypes: "[Rich text editor] - Components"

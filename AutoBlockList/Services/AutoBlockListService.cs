@@ -86,7 +86,7 @@ namespace AutoBlockList.Services
             {
                 blocks.Add(new BlockConfiguration()
                 {
-                    Label = ncContentType.Template,
+                    Label = _autoBlockListSettings.Value.ConvertLabelsToUfm ? LabelHelper.ToUfm(ncContentType.Template) : ncContentType.Template,
                     EditorSize = GetBlockListEditorSize(),
                     ContentElementTypeKey = _contentTypeService.Get(ncContentType.Alias).Key
                 });
