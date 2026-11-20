@@ -154,63 +154,44 @@ namespace AutoBlockList.Services
 
 			try
 			{
-				var propertyType = contentType.PropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id);
-				var isComposition = contentType.CompositionIds().Any();
+				var targets = new List<IContentType> { contentType };
+				targets.AddRange(contentType.CompositionIds().Select(x => _contentTypeService.Get(x)).OfType<IContentType>());
 
-				propertyType = isComposition ? contentType.CompositionPropertyTypes.FirstOrDefault(x => x.DataTypeId == ncDataType.Id) : propertyType;
-
-				if (contentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
+				foreach (var target in targets)
 				{
-					convertReport.Status = AutoBlockListConstants.Status.Skipped;
-					_hubContext.Client?.AddReport(convertReport);
-					return convertReport;
-				}
+					var propertyTypes = target.PropertyTypes
+						.Where(x => x.DataTypeId == ncDataType.Id)
+						.ToList();
 
-				if (isComposition)
-				{
-					var compositionContentTypeIds = contentType.CompositionIds();
-					foreach (var compositionContentTypeId in compositionContentTypeIds)
+					var added = false;
+
+					foreach (var propertyType in propertyTypes)
 					{
-						var compositionContentType = _contentTypeService.Get(compositionContentTypeId);
-						if (compositionContentType != null && compositionContentType.PropertyTypeExists(propertyType.Alias))
+						if (target.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
 						{
-							if (compositionContentType.PropertyTypeExists(string.Format(GetAliasFormatting(), propertyType.Alias)))
-							{
-								convertReport.Status = AutoBlockListConstants.Status.Skipped;
-								_hubContext.Client?.AddReport(convertReport);
-								return convertReport;
-							}
+							convertReport.Status = AutoBlockListConstants.Status.Skipped;
+							continue;
+						}
 
-							var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
-                            if (propertyGroup != null)
-                            {
-                                SortHelper.InsertPropertyTypeAfter(contentType,
-                                    propertyGroup,
-                                    propertyType.Alias,
-                                    MapPropertyType(propertyType, ncDataType, blDataType));
+						var propertyGroup = target.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
+						if (propertyGroup == null)
+							continue;
 
-								_contentTypeService.Save(compositionContentType);
-								convertReport.Status = AutoBlockListConstants.Status.Success;
-							}
+						if (SortHelper.InsertPropertyTypeAfter(target,
+							propertyGroup,
+							propertyType.Alias,
+							MapPropertyType(propertyType, ncDataType, blDataType)))
+						{
+							added = true;
 						}
 					}
+
+					if (!added)
+						continue;
+
+					_contentTypeService.Save(target);
+					convertReport.Status = AutoBlockListConstants.Status.Success;
 				}
-
-				if (contentType.PropertyTypeExists(propertyType.Alias))
-				{
-				    var propertyGroup = contentType.PropertyGroups.FirstOrDefault(x => x.Id == propertyType.PropertyGroupId.Value);
-                    if (propertyGroup != null)
-                    {
-                        SortHelper.InsertPropertyTypeAfter(contentType,
-                            propertyGroup,
-                            propertyType.Alias,
-                            MapPropertyType(propertyType, ncDataType, blDataType));
-
-					    _contentTypeService.Save(contentType);
-					    convertReport.Status = AutoBlockListConstants.Status.Success;
-				    }
-				}
-
 			}
 			catch (Exception ex)
 			{
@@ -347,29 +328,23 @@ namespace AutoBlockList.Services
                 return string.Empty;
 
             var ncValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(value.ToString());
-
             var contentData = ConvertNCDataToBLData(ncValues);
-            var contentUdiList = new List<Dictionary<string, string>>();
 
-            if (contentData == null)
-                return string.Empty;
+            return contentData == null ? string.Empty : SerializeBlockList(contentData);
+        }
 
-            foreach (var content in contentData)
-            {
-                contentUdiList.Add(new Dictionary<string, string>
-                {
-                    {"contentUdi",content["udi"] },
-                });
-            }
+        private static string SerializeBlockList(List<Dictionary<string, string>> contentData)
+        {
+            var contentUdiList = contentData
+                .Select(x => new Dictionary<string, string> { { "contentUdi", x["udi"] } })
+                .ToList();
 
-            var blockList = new BlockList()
+            return JsonConvert.SerializeObject(new BlockList()
             {
                 layout = new BlockListUdi(contentUdiList, new List<Dictionary<string, string>>()),
                 contentData = contentData,
                 settingsData = new List<Dictionary<string, string>>()
-            };
-
-            return JsonConvert.SerializeObject(blockList);
+            });
         }
 
         private List<Dictionary<string, string>> ConvertNCDataToBLData(IEnumerable<Dictionary<string, string>> ncValues)
@@ -382,52 +357,41 @@ namespace AutoBlockList.Services
             foreach (var ncValue in ncValues)
             {
                 var rawContentType = ncValue.FirstOrDefault(x => x.Key == "ncContentTypeAlias").Value;
-                
-                var contentType = _contentTypeService.GetAllElementTypes().FirstOrDefault(x => x.Alias == rawContentType);
-                var contentUdi = new GuidUdi("element", Guid.NewGuid()).ToString();
-                var values = ncValue.Where(x => !AutoBlockListConstants.DefaultNC.Contains(x.Key));
+                var contentType = string.IsNullOrEmpty(rawContentType) ? null : _contentTypeService.Get(rawContentType);
+
+                if (contentType == null)
+                {
+                    _logger.LogError("Could not find Nested Content element type '{0}'", rawContentType);
+                    return null;
+                }
 
                 var content = new Dictionary<string, string>
                 {
                     {"contentTypeKey", contentType.Key.ToString() },
-                    {"udi", contentUdi },
+                    {"udi", new GuidUdi("element", Guid.NewGuid()).ToString() },
                 };
 
-                foreach (var value in values)
+                foreach (var value in ncValue.Where(x => !AutoBlockListConstants.DefaultNC.Contains(x.Key)))
                 {
-                    try
-                    {
-                        var nsedtedNCValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(value.Value);
+                    var elementProperty = contentType.CompositionPropertyTypes.FirstOrDefault(x => x.Alias == value.Key);
 
-                        if (nsedtedNCValues != null)
-                        {
-                            var nestedContentData = ConvertNCDataToBLData(nsedtedNCValues);
-                            var contentUdiList = new List<Dictionary<string, string>>();
-
-                            if (nestedContentData == null)
-                                return null;
-                     
-                                foreach (var nestedContent in nestedContentData)
-                                {
-                                    contentUdiList.Add(new Dictionary<string, string>
-                                {
-                                    {"contentUdi", nestedContent["udi"] },
-                                });
-                                }
-                                var blockList = new BlockList()
-                                {
-                                    layout = new BlockListUdi(contentUdiList, new List<Dictionary<string, string>>()),
-                                    contentData = nestedContentData,
-                                    settingsData = new List<Dictionary<string, string>>()
-                                };
-
-                                content.Add(string.Format(GetAliasFormatting(), value.Key), JsonConvert.SerializeObject(blockList));
-                        }
-                    }
-                    catch(Exception ex)
+                    if (elementProperty?.PropertyEditorAlias != PropertyEditors.Aliases.NestedContent
+                        || string.IsNullOrWhiteSpace(value.Value))
                     {
                         content.Add(value.Key, value.Value);
+                        continue;
                     }
+
+                    var nestedNCValues = JsonConvert.DeserializeObject<IEnumerable<Dictionary<string, string>>>(value.Value);
+                    var nestedContentData = ConvertNCDataToBLData(nestedNCValues);
+
+                    if (nestedContentData == null)
+                    {
+                        content.Add(value.Key, value.Value);
+                        continue;
+                    }
+
+                    content.Add(string.Format(GetAliasFormatting(), value.Key), SerializeBlockList(nestedContentData));
                 }
 
                 contentData.Add(content);
@@ -484,7 +448,7 @@ namespace AutoBlockList.Services
                 }
             }
 
-            return dataTypes;
+            return dataTypes.DistinctBy(x => x.Id);
         }
 
 		public IEnumerable<int> GetComposedOf(IEnumerable<int> ids)
@@ -505,7 +469,7 @@ namespace AutoBlockList.Services
             if (contentType.CompositionPropertyTypes.Any())
                 propertyTypes.AddRange(contentType.CompositionPropertyTypes.Where(x => x.PropertyEditorAlias == PropertyEditors.Aliases.NestedContent));
 
-            return propertyTypes;
+            return propertyTypes.DistinctBy(x => x.Id);
         }
 
         public IEnumerable<IContentType> GetElementContentTypesFromDataType(IDataType dataType)
