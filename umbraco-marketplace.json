@@ -14,11 +14,6 @@
     "Description": "Auto block list is an Umbraco package made for v10+. Made to help automate the process of converting nested content into an block list. In addition it transfers the content to the new block list format.",
     "DocumentationUrl": "https://github.com/Lantzify/auto-block-list/",
     "IssueTrackerUrl": "https://github.com/Lantzify/auto-block-list/issues",
-    "PackagesByAuthor": [
-        "uSupport",
-        "AutoDictionaries",
-        "UmbracoNaviHideIcon"
-    ],
     "Screenshots": [
         {
             "ImageUrl": "https://raw.githubusercontent.com/Lantzify/auto-block-list/master/assets/macroDemo.gif",
